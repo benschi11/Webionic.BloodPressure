@@ -1,0 +1,98 @@
+@page "/"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Webionic.BloodPressure.Data
+@using Webionic.BloodPressure.Models
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Blutdruck messen – BlutdruckTracker</PageTitle>
+
+<div class="container-fluid px-3">
+    <h1 class="h4 mt-3 mb-4">🩺 Neue Messung</h1>
+
+    @if (success)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ✅ Messung erfolgreich gespeichert!
+            <button type="button" class="btn-close" @onclick="() => success = false"></button>
+        </div>
+    }
+
+    <EditForm Model="entry" OnValidSubmit="SaveEntry" class="needs-validation">
+        <DataAnnotationsValidator />
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Systole (mmHg) <span class="text-muted fw-normal">– oberer Wert</span></label>
+                    <InputNumber class="form-control form-control-lg" @bind-Value="entry.Systole"
+                        min="50" max="300" placeholder="z.B. 120" />
+                    <ValidationMessage For="() => entry.Systole" class="text-danger small" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Diastole (mmHg) <span class="text-muted fw-normal">– unterer Wert</span></label>
+                    <InputNumber class="form-control form-control-lg" @bind-Value="entry.Diastole"
+                        min="30" max="200" placeholder="z.B. 80" />
+                    <ValidationMessage For="() => entry.Diastole" class="text-danger small" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Puls (bpm)</label>
+                    <InputNumber class="form-control form-control-lg" @bind-Value="entry.Pulse"
+                        min="30" max="250" placeholder="z.B. 72" />
+                    <ValidationMessage For="() => entry.Pulse" class="text-danger small" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Datum &amp; Uhrzeit</label>
+                    <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="entry.MeasuredAt" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Notiz <span class="text-muted fw-normal">(optional)</span></label>
+                    <InputTextArea class="form-control" @bind-Value="entry.Note" rows="2" placeholder="z.B. nach dem Sport..." />
+                </div>
+            </div>
+        </div>
+
+        @if (entry.Systole > 0 && entry.Diastole > 0)
+        {
+            <div class="alert alert-@entry.CategoryCssClass mb-3">
+                <strong>Kategorie:</strong> @entry.BloodPressureCategory
+            </div>
+        }
+
+        <button type="submit" class="btn btn-primary btn-lg w-100" disabled="@saving">
+            @if (saving)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            }
+            💾 Messung speichern
+        </button>
+    </EditForm>
+</div>
+
+@code {
+    private BloodPressureEntry entry = new() { MeasuredAt = DateTime.Now };
+    private bool saving = false;
+    private bool success = false;
+
+    private async Task SaveEntry()
+    {
+        saving = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            db.BloodPressureEntries.Add(entry);
+            await db.SaveChangesAsync();
+            success = true;
+            entry = new() { MeasuredAt = DateTime.Now };
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

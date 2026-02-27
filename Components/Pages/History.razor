@@ -1,0 +1,165 @@
+@page "/history"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Webionic.BloodPressure.Data
+@using Webionic.BloodPressure.Models
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<PageTitle>Verlauf – BlutdruckTracker</PageTitle>
+
+<div class="container-fluid px-3">
+    <h1 class="h4 mt-3 mb-3">📋 Messungsverlauf</h1>
+
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+        <select class="form-select form-select-sm w-auto" @bind="filterDays">
+            <option value="7">Letzte 7 Tage</option>
+            <option value="30">Letzte 30 Tage</option>
+            <option value="90">Letzte 90 Tage</option>
+            <option value="0">Alle</option>
+        </select>
+        <button class="btn btn-sm btn-outline-primary" @onclick="LoadEntries">🔄 Aktualisieren</button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    }
+    else if (!entries.Any())
+    {
+        <div class="alert alert-info">
+            Noch keine Messungen vorhanden. <a href="/">Jetzt messen!</a>
+        </div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var e in entries)
+            {
+                <div class="list-group-item list-group-item-action p-3 @(editId == e.Id ? "border-primary" : "")">
+                    @if (editId == e.Id)
+                    {
+                        <EditForm Model="editEntry" OnValidSubmit="SaveEdit">
+                            <DataAnnotationsValidator />
+                            <div class="row g-2 mb-2">
+                                <div class="col-4">
+                                    <label class="form-label small mb-1">Systole</label>
+                                    <InputNumber class="form-control form-control-sm" @bind-Value="editEntry!.Systole" />
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label small mb-1">Diastole</label>
+                                    <InputNumber class="form-control form-control-sm" @bind-Value="editEntry!.Diastole" />
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label small mb-1">Puls</label>
+                                    <InputNumber class="form-control form-control-sm" @bind-Value="editEntry!.Pulse" />
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <InputTextArea class="form-control form-control-sm" @bind-Value="editEntry!.Note" rows="1" placeholder="Notiz..." />
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-success">✅ Speichern</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Abbrechen</button>
+                            </div>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold fs-5">
+                                    @e.Systole/@e.Diastole
+                                    <span class="text-muted fs-6">mmHg</span>
+                                    &nbsp; @e.Pulse <span class="text-muted fs-6">bpm</span>
+                                </div>
+                                <div class="text-muted small">@e.MeasuredAt.ToString("dd.MM.yyyy HH:mm")</div>
+                                @if (!string.IsNullOrEmpty(e.Note))
+                                {
+                                    <div class="text-muted small fst-italic">@e.Note</div>
+                                }
+                                <span class="badge bg-@e.CategoryCssClass mt-1">@e.BloodPressureCategory</span>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(e)">✏️</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteEntry(e.Id)">🗑️</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="text-muted small mt-2 text-center">@entries.Count Messung(en) angezeigt</div>
+    }
+</div>
+
+@code {
+    private List<BloodPressureEntry> entries = [];
+    private bool isLoading = true;
+    private int filterDays = 30;
+    private int editId = 0;
+    private BloodPressureEntry? editEntry;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEntries();
+    }
+
+    private async Task LoadEntries()
+    {
+        isLoading = true;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var query = db.BloodPressureEntries.AsQueryable();
+        if (filterDays > 0)
+            query = query.Where(e => e.MeasuredAt >= DateTime.Now.AddDays(-filterDays));
+        entries = await query.OrderByDescending(e => e.MeasuredAt).ToListAsync();
+        isLoading = false;
+    }
+
+    private void StartEdit(BloodPressureEntry e)
+    {
+        editId = e.Id;
+        editEntry = new BloodPressureEntry
+        {
+            Id = e.Id, Systole = e.Systole, Diastole = e.Diastole,
+            Pulse = e.Pulse, MeasuredAt = e.MeasuredAt, Note = e.Note
+        };
+    }
+
+    private void CancelEdit()
+    {
+        editId = 0;
+        editEntry = null;
+    }
+
+    private async Task SaveEdit()
+    {
+        if (editEntry is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await db.BloodPressureEntries.FindAsync(editEntry.Id);
+        if (existing is not null)
+        {
+            existing.Systole = editEntry.Systole;
+            existing.Diastole = editEntry.Diastole;
+            existing.Pulse = editEntry.Pulse;
+            existing.Note = editEntry.Note;
+            await db.SaveChangesAsync();
+        }
+        editId = 0;
+        editEntry = null;
+        await LoadEntries();
+    }
+
+    private async Task DeleteEntry(int id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var entry = await db.BloodPressureEntries.FindAsync(id);
+        if (entry is not null)
+        {
+            db.BloodPressureEntries.Remove(entry);
+            await db.SaveChangesAsync();
+        }
+        await LoadEntries();
+    }
+}

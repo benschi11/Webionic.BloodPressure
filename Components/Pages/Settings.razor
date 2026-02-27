@@ -1,0 +1,214 @@
+@page "/settings"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Webionic.BloodPressure.Data
+@using Webionic.BloodPressure.Models
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject IJSRuntime JS
+
+<PageTitle>Erinnerungen – BlutdruckTracker</PageTitle>
+
+<div class="container-fluid px-3">
+    <h1 class="h4 mt-3 mb-4">🔔 Erinnerungen</h1>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="alert alert-@statusType alert-dismissible fade show" role="alert">
+            @statusMessage
+            <button type="button" class="btn-close" @onclick="() => statusMessage = null"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">Benachrichtigungen</div>
+        <div class="card-body">
+            <p class="text-muted small">
+                Erlaube Benachrichtigungen, damit BlutdruckTracker dich erinnern kann, deinen Blutdruck zu messen.
+            </p>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-@(permissionGranted ? "success" : "secondary") fs-6">
+                    @(permissionGranted ? "✅ Erlaubt" : "❌ Nicht erlaubt")
+                </span>
+                @if (!permissionGranted)
+                {
+                    <button class="btn btn-primary" @onclick="RequestPermission">
+                        Benachrichtigungen erlauben
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-outline-primary btn-sm" @onclick="TestNotification">
+                        🔔 Test-Benachrichtigung
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (settings is not null)
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">Erinnerungszeiten</div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="reminderEnabled"
+                           @bind="settings.IsEnabled" />
+                    <label class="form-check-label" for="reminderEnabled">
+                        Tägliche Erinnerung aktivieren
+                    </label>
+                </div>
+
+                @if (settings.IsEnabled)
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Erinnerungszeit</label>
+                        <input type="time" class="form-control"
+                               value="@settings.ReminderTime.ToString("HH:mm")"
+                               @onchange="OnTimeChanged" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Wochentage</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <DayToggle Label="Mo" @bind-Value="settings.MondayEnabled" />
+                            <DayToggle Label="Di" @bind-Value="settings.TuesdayEnabled" />
+                            <DayToggle Label="Mi" @bind-Value="settings.WednesdayEnabled" />
+                            <DayToggle Label="Do" @bind-Value="settings.ThursdayEnabled" />
+                            <DayToggle Label="Fr" @bind-Value="settings.FridayEnabled" />
+                            <DayToggle Label="Sa" @bind-Value="settings.SaturdayEnabled" />
+                            <DayToggle Label="So" @bind-Value="settings.SundayEnabled" />
+                        </div>
+                    </div>
+                }
+
+                <button class="btn btn-primary" @onclick="SaveSettings">💾 Speichern</button>
+            </div>
+        </div>
+
+        @if (settings.IsEnabled && permissionGranted)
+        {
+            <div class="alert alert-info">
+                <strong>Aktiv:</strong> Du wirst jeden Tag um @settings.ReminderTime.ToString("HH:mm") Uhr erinnert.
+                <br /><small class="text-muted">Hinweis: Erinnerungen funktionieren nur, wenn die App im Browser geöffnet ist. Für persistente Benachrichtigungen installiere die App als PWA.</small>
+            </div>
+        }
+    }
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">App installieren</div>
+        <div class="card-body">
+            <p class="text-muted small">
+                Installiere BlutdruckTracker als App auf deinem Smartphone für ein besseres Erlebnis und persistente Benachrichtigungen.
+            </p>
+            <button class="btn btn-outline-primary" id="installBtn" style="display: none;" @onclick="InstallPwa">
+                📱 App installieren
+            </button>
+            <p class="text-muted small mt-2">
+                <strong>iOS Safari:</strong> Tippe auf "Teilen" → "Zum Home-Bildschirm"<br />
+                <strong>Android Chrome:</strong> Tippe auf das Menü → "App installieren"
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ReminderSettings? settings;
+    private bool permissionGranted = false;
+    private string? statusMessage;
+    private string statusType = "success";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        settings = await db.ReminderSettings.FirstOrDefaultAsync() ?? new ReminderSettings();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("blazorInterop.registerServiceWorker");
+            var permission = await JS.InvokeAsync<string>("blazorInterop.getNotificationPermission");
+            permissionGranted = permission == "granted";
+            StateHasChanged();
+        }
+    }
+
+    private async Task RequestPermission()
+    {
+        var result = await JS.InvokeAsync<string>("blazorInterop.requestNotificationPermission");
+        permissionGranted = result == "granted";
+        if (permissionGranted)
+        {
+            statusMessage = "✅ Benachrichtigungen wurden erlaubt!";
+            statusType = "success";
+        }
+        else
+        {
+            statusMessage = "❌ Benachrichtigungen wurden abgelehnt. Bitte in den Browser-Einstellungen aktivieren.";
+            statusType = "warning";
+        }
+    }
+
+    private async Task TestNotification()
+    {
+        await JS.InvokeAsync<bool>("blazorInterop.showNotification",
+            "BlutdruckTracker", "Test-Erinnerung: Zeit für deine Blutdruckmessung! 🩺");
+    }
+
+    private void OnTimeChanged(ChangeEventArgs e)
+    {
+        if (settings is not null && TimeOnly.TryParse(e.Value?.ToString(), out var time))
+            settings.ReminderTime = time;
+    }
+
+    private async Task SaveSettings()
+    {
+        if (settings is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await db.ReminderSettings.FirstOrDefaultAsync();
+        if (existing is null)
+        {
+            db.ReminderSettings.Add(settings);
+        }
+        else
+        {
+            existing.IsEnabled = settings.IsEnabled;
+            existing.ReminderTime = settings.ReminderTime;
+            existing.MondayEnabled = settings.MondayEnabled;
+            existing.TuesdayEnabled = settings.TuesdayEnabled;
+            existing.WednesdayEnabled = settings.WednesdayEnabled;
+            existing.ThursdayEnabled = settings.ThursdayEnabled;
+            existing.FridayEnabled = settings.FridayEnabled;
+            existing.SaturdayEnabled = settings.SaturdayEnabled;
+            existing.SundayEnabled = settings.SundayEnabled;
+        }
+        await db.SaveChangesAsync();
+        statusMessage = "✅ Einstellungen gespeichert!";
+        statusType = "success";
+
+        if (settings.IsEnabled && permissionGranted)
+            await ScheduleNextReminder();
+    }
+
+    private async Task ScheduleNextReminder()
+    {
+        if (settings is null) return;
+        var now = DateTime.Now;
+        var reminderDateTime = new DateTime(now.Year, now.Month, now.Day,
+            settings.ReminderTime.Hour, settings.ReminderTime.Minute, 0);
+
+        if (reminderDateTime <= now)
+            reminderDateTime = reminderDateTime.AddDays(1);
+
+        var delay = (int)(reminderDateTime - now).TotalMilliseconds;
+        await JS.InvokeVoidAsync("blazorInterop.scheduleReminder",
+            "daily-reminder", delay,
+            "BlutdruckTracker", "Zeit für deine Blutdruckmessung! 🩺", null);
+    }
+
+    private async Task InstallPwa()
+    {
+        await JS.InvokeVoidAsync("eval", "if(window.deferredPrompt){window.deferredPrompt.prompt();}");
+    }
+}
