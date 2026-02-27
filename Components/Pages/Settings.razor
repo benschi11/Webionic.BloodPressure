@@ -1,5 +1,5 @@
 @page "/settings"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Microsoft.EntityFrameworkCore
 @using Webionic.BloodPressure.Data
 @using Webionic.BloodPressure.Models
