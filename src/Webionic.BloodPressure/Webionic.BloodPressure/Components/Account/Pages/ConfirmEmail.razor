@@ -10,8 +10,16 @@
 
 <PageTitle>Confirm email</PageTitle>
 
-<h1>Confirm email</h1>
-<StatusMessage Message="@statusMessage" />
+<div class="account-container">
+    <div class="account-card">
+        <div class="account-status-page">
+            <i class="bi bi-envelope-check-fill" style="color: var(--bp-success);"></i>
+            <h1>Confirm email</h1>
+            <StatusMessage Message="@statusMessage" />
+        </div>
+        <a href="Account/Login" class="btn btn-primary w-100">Go to login</a>
+    </div>
+</div>
 
 @code {
     private string? statusMessage;

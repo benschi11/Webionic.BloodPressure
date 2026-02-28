@@ -652,3 +652,131 @@ h1:focus {
     color: var(--bp-dark);
     margin-top: 8px;
 }
+
+.account-card h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--bp-dark);
+    margin-bottom: 4px;
+}
+
+.account-card h2 {
+    font-size: 0.95rem;
+    color: #888;
+    font-weight: 400;
+    margin-bottom: 16px;
+}
+
+.account-card hr {
+    border-color: rgba(0, 0, 0, 0.06);
+    margin: 16px 0;
+}
+
+.account-card .form-floating > .form-control {
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-card .form-floating > .form-control:focus {
+    border-color: var(--bp-primary);
+    box-shadow: 0 0 0 3px var(--bp-primary-light);
+}
+
+.account-card .btn-primary {
+    background: linear-gradient(135deg, var(--bp-primary) 0%, var(--bp-primary-dark) 100%);
+    border: none;
+    border-radius: 14px;
+    padding: 14px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(230, 57, 70, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.account-card .btn-primary:hover,
+.account-card .btn-primary:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(230, 57, 70, 0.4);
+    background: linear-gradient(135deg, var(--bp-primary) 0%, var(--bp-primary-dark) 100%);
+}
+
+.account-card .btn-primary:active {
+    transform: translateY(0);
+}
+
+.account-card a {
+    color: var(--bp-primary);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.account-card a:hover {
+    color: var(--bp-primary-dark);
+    text-decoration: underline;
+}
+
+.account-card .text-danger {
+    color: var(--bp-danger) !important;
+    font-size: 0.85rem;
+}
+
+.account-card .form-check-input:checked {
+    background-color: var(--bp-primary);
+    border-color: var(--bp-primary);
+}
+
+.account-card .alert-info {
+    background: var(--bp-primary-light);
+    border: none;
+    border-radius: 12px;
+    color: var(--bp-dark);
+    font-size: 0.9rem;
+}
+
+.account-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.account-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #aaa;
+    font-size: 0.85rem;
+    margin: 8px 0;
+}
+
+.account-divider::before,
+.account-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e9ecef;
+}
+
+.account-status-page {
+    text-align: center;
+    padding: 16px 0;
+}
+
+.account-status-page i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.account-status-page h1 {
+    margin-bottom: 12px;
+}
+
+.account-status-page p {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+}
