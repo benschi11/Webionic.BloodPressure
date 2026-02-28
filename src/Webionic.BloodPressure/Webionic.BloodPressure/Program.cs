@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using Webionic.BloodPressure.Components;
 using Webionic.BloodPressure.Components.Account;
 using Webionic.BloodPressure.Data;
@@ -50,6 +52,9 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 builder.Services.AddScoped<IBloodPressureService, BloodPressureService>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IPdfExportService, PdfExportService>();
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var app = builder.Build();
 
@@ -107,5 +112,21 @@ app.MapRazorComponents<App>()
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+// PDF export endpoint
+app.MapGet("/api/report/pdf", async (int? days, HttpContext httpContext, IReportService reportService, IPdfExportService pdfExportService) =>
+{
+    var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId is null)
+        return Results.Unauthorized();
+
+    var period = days is 7 or 30 or 90 or 365 ? days.Value : 30;
+    var fromDate = DateTime.UtcNow.AddDays(-period);
+    var stats = await reportService.GetStatsAsync(userId, fromDate);
+    var readings = await reportService.GetReadingsForChartAsync(userId, period);
+    var pdf = pdfExportService.GenerateReport(stats, readings, period);
+
+    return Results.File(pdf, "application/pdf", $"Blutdruck-Report-{period}Tage.pdf");
+}).RequireAuthorization();
 
 app.Run();

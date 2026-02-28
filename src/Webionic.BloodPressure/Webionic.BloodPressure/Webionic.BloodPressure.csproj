@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="QuestPDF" Version="2026.2.2" />
     <ProjectReference Include="..\..\Webionic.BloodPressure.ServiceDefaults\Webionic.BloodPressure.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Webionic.BloodPressure.Client\Webionic.BloodPressure.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.1" />
