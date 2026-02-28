@@ -16,6 +16,9 @@ public class ReadingFormModel
     [Range(30, 220, ErrorMessage = "Puls muss zwischen 30 und 220 bpm liegen.")]
     public int Pulse { get; set; }
 
+    [Required]
+    public DateTime Timestamp { get; set; } = DateTime.Now;
+
     [MaxLength(500)]
     public string? Notes { get; set; }
 }

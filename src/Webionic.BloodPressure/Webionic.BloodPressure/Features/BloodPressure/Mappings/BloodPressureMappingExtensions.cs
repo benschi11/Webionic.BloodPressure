@@ -32,7 +32,7 @@ public static class BloodPressureMappingExtensions
             Pulse = form.Pulse,
             Notes = form.Notes,
             UserId = userId,
-            Timestamp = DateTime.UtcNow
+            Timestamp = form.Timestamp.ToUniversalTime()
         };
     }
 }
