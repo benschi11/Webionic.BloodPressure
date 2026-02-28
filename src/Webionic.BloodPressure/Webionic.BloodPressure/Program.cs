@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Webionic.BloodPressure.Components;
 using Webionic.BloodPressure.Components.Account;
 using Webionic.BloodPressure.Data;
+using Webionic.BloodPressure.Features.BloodPressure.Services;
+using Webionic.BloodPressure.Features.Reminders.Services;
+using Webionic.BloodPressure.Features.Reports.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,12 +31,12 @@ builder.Services.AddAuthentication(options =>
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlite(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
-        options.SignIn.RequireConfirmedAccount = true;
+        options.SignIn.RequireConfirmedAccount = false;
         options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -42,7 +45,19 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+// Register feature services
+builder.Services.AddScoped<IBloodPressureService, BloodPressureService>();
+builder.Services.AddScoped<IReminderService, ReminderService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+
 var app = builder.Build();
+
+// Auto-apply migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
 
 app.MapDefaultEndpoints();
 
