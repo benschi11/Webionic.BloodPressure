@@ -8,6 +8,7 @@
 @inject IBloodPressureService BpService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Messung erfassen</PageTitle>
@@ -41,7 +42,7 @@
                 <i class="bi bi-clock-history"></i>
                 Zuletzt erfasst
             </div>
-            <ReadingList Readings="recentReadings" />
+            <ReadingList Readings="recentReadings" UtcOffsetMinutes="_utcOffsetMinutes" />
         </div>
     }
 </div>
@@ -52,6 +53,20 @@
     private bool isSaving;
     private bool isSuccessVisible;
     private string? currentUserId;
+    private int _utcOffsetMinutes;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _utcOffsetMinutes = await JS.InvokeAsync<int>("timezoneInterop.getBrowserUtcOffsetMinutes");
+                StateHasChanged();
+            }
+            catch { /* JS not available */ }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

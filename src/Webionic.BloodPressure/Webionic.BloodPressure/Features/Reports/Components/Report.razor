@@ -10,6 +10,7 @@
 @inject IReportService ReportService
 @inject IBloodPressureService BpService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Report</PageTitle>
@@ -28,7 +29,7 @@
     </div>
 
     <div style="text-align: right; margin-top: 8px;">
-        <a href="/api/report/pdf?days=@selectedDays" target="_blank" class="btn-pdf-export">
+        <a href="/api/report/pdf?days=@selectedDays&tzOffset=@_utcOffsetMinutes" target="_blank" class="btn-pdf-export">
             <i class="bi bi-file-earmark-pdf me-1"></i>PDF Export
         </a>
     </div>
@@ -82,7 +83,7 @@
                             <span style="color: var(--bp-success);">· @reading.Pulse bpm</span>
                         </div>
                         <div class="reading-meta">
-                            @reading.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                            @reading.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
                             @if (!string.IsNullOrWhiteSpace(reading.Notes))
                             {
                                 <span> · @reading.Notes</span>
@@ -104,6 +105,20 @@
     private List<BloodPressureReadingDto> chartReadings = [];
     private List<BloodPressureReadingDto> allReadings = [];
     private string? currentUserId;
+    private int _utcOffsetMinutes;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _utcOffsetMinutes = await JS.InvokeAsync<int>("timezoneInterop.getBrowserUtcOffsetMinutes");
+                StateHasChanged();
+            }
+            catch { /* JS not available */ }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

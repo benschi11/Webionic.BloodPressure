@@ -21,7 +21,7 @@ else
                     <span style="color: var(--bp-success);">· @reading.Pulse bpm</span>
                 </div>
                 <div class="reading-meta">
-                    @reading.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                    @reading.Timestamp.AddMinutes(UtcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
                     @if (!string.IsNullOrWhiteSpace(reading.Notes))
                     {
                         <span> · @reading.Notes</span>
@@ -41,6 +41,7 @@ else
 @code {
     [Parameter] public List<BloodPressureReadingDto> Readings { get; set; } = [];
     [Parameter] public EventCallback<int> OnDelete { get; set; }
+    [Parameter] public int UtcOffsetMinutes { get; set; }
 
     private static string GetClassification(int systolic, int diastolic)
     {

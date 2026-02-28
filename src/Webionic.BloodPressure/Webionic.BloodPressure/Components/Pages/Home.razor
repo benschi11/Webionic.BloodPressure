@@ -7,6 +7,7 @@
 @inject IBloodPressureService BpService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Blutdruck Tracker</PageTitle>
@@ -42,7 +43,7 @@
                 </div>
             </div>
             <div style="text-align: center; color: #999; font-size: 0.8rem;">
-                <i class="bi bi-clock"></i> @latestReading.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                <i class="bi bi-clock"></i> @latestReading.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
             </div>
         </div>
     }
@@ -65,7 +66,7 @@
                             @reading.Systolic/@reading.Diastolic mmHg · @reading.Pulse bpm
                         </div>
                         <div class="reading-meta">
-                            @reading.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                            @reading.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
                             @if (!string.IsNullOrWhiteSpace(reading.Notes))
                             {
                                 <span> · @reading.Notes</span>
@@ -116,6 +117,20 @@
 @code {
     private List<BloodPressureReadingDto> recentReadings = [];
     private BloodPressureReadingDto? latestReading;
+    private int _utcOffsetMinutes;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _utcOffsetMinutes = await JS.InvokeAsync<int>("timezoneInterop.getBrowserUtcOffsetMinutes");
+                StateHasChanged();
+            }
+            catch { /* JS not available */ }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

@@ -5,5 +5,5 @@ namespace Webionic.BloodPressure.Features.Reports.Services;
 
 public interface IPdfExportService
 {
-    byte[] GenerateReport(BloodPressureStats stats, List<BloodPressureReadingDto> readings, int days);
+    byte[] GenerateReport(BloodPressureStats stats, List<BloodPressureReadingDto> readings, int days, int utcOffsetMinutes = 0);
 }

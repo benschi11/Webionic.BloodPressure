@@ -10,7 +10,7 @@ namespace Webionic.BloodPressure.Features.Reports.Services;
 
 public class PdfExportService : IPdfExportService
 {
-    public byte[] GenerateReport(BloodPressureStats stats, List<BloodPressureReadingDto> readings, int days)
+    public byte[] GenerateReport(BloodPressureStats stats, List<BloodPressureReadingDto> readings, int days, int utcOffsetMinutes = 0)
     {
         var sortedReadings = readings.OrderBy(r => r.Timestamp).ToList();
         var periodLabel = days switch
@@ -49,14 +49,14 @@ public class PdfExportService : IPdfExportService
                     // Blood pressure chart
                     if (sortedReadings.Count > 1)
                     {
-                        col.Item().Element(c => ComposeChart(c, sortedReadings, "Blutdruckverlauf", "bloodpressure"));
-                        col.Item().Element(c => ComposeChart(c, sortedReadings, "Pulsverlauf", "pulse"));
+                        col.Item().Element(c => ComposeChart(c, sortedReadings, "Blutdruckverlauf", "bloodpressure", utcOffsetMinutes));
+                        col.Item().Element(c => ComposeChart(c, sortedReadings, "Pulsverlauf", "pulse", utcOffsetMinutes));
                     }
 
                     // Readings table
                     if (sortedReadings.Count > 0)
                     {
-                        col.Item().Element(c => ComposeReadingsTable(c, sortedReadings));
+                        col.Item().Element(c => ComposeReadingsTable(c, sortedReadings, utcOffsetMinutes));
                     }
                 });
 
@@ -105,16 +105,16 @@ public class PdfExportService : IPdfExportService
         });
     }
 
-    private static void ComposeChart(IContainer container, List<BloodPressureReadingDto> readings, string title, string chartType)
+    private static void ComposeChart(IContainer container, List<BloodPressureReadingDto> readings, string title, string chartType, int utcOffsetMinutes = 0)
     {
         container.Column(col =>
         {
             col.Item().Text(title).FontSize(14).Bold().FontColor(Colors.Blue.Darken2);
-            col.Item().PaddingTop(5).Height(200).Svg(GenerateChartSvg(readings, chartType));
+            col.Item().PaddingTop(5).Height(200).Svg(GenerateChartSvg(readings, chartType, utcOffsetMinutes));
         });
     }
 
-    private static string GenerateChartSvg(List<BloodPressureReadingDto> readings, string chartType)
+    private static string GenerateChartSvg(List<BloodPressureReadingDto> readings, string chartType, int utcOffsetMinutes = 0)
     {
         const float width = 515;
         const float height = 200;
@@ -173,7 +173,7 @@ public class PdfExportService : IPdfExportService
         for (var i = 0; i < readings.Count; i += labelInterval)
         {
             var x = ToX(i);
-            var label = readings[i].Timestamp.ToLocalTime().ToString("dd.MM.");
+            var label = readings[i].Timestamp.AddMinutes(utcOffsetMinutes).ToString("dd.MM.");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{x}\" y1=\"{marginTop + chartHeight}\" x2=\"{x}\" y2=\"{marginTop + chartHeight + 4}\" stroke=\"#666\" stroke-width=\"1\"/>");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{x}\" y=\"{height - 8}\" font-size=\"8\" fill=\"#555\" text-anchor=\"middle\">{label}</text>");
         }
@@ -238,7 +238,7 @@ public class PdfExportService : IPdfExportService
         return sb.ToString();
     }
 
-    private static void ComposeReadingsTable(IContainer container, List<BloodPressureReadingDto> readings)
+    private static void ComposeReadingsTable(IContainer container, List<BloodPressureReadingDto> readings, int utcOffsetMinutes = 0)
     {
         container.Column(col =>
         {
@@ -268,7 +268,7 @@ public class PdfExportService : IPdfExportService
                 {
                     var bgColor = isAlternate ? Colors.Grey.Lighten4 : Colors.White;
 
-                    table.Cell().Background(bgColor).Padding(4).Text(reading.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")).FontSize(9);
+                    table.Cell().Background(bgColor).Padding(4).Text(reading.Timestamp.AddMinutes(utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")).FontSize(9);
                     table.Cell().Background(bgColor).Padding(4).Text($"{reading.Systolic} mmHg").FontSize(9);
                     table.Cell().Background(bgColor).Padding(4).Text($"{reading.Diastolic} mmHg").FontSize(9);
                     table.Cell().Background(bgColor).Padding(4).Text($"{reading.Pulse} bpm").FontSize(9);
