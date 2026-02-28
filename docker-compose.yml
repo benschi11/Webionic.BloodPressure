@@ -1,0 +1,14 @@
+services:
+  webionic-bloodpressure:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    volumes:
+      - bloodpressure-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  bloodpressure-data:
