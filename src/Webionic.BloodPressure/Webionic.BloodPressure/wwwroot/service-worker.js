@@ -1,6 +1,5 @@
-const CACHE_NAME = 'bp-tracker-v1';
+const CACHE_NAME = 'bp-tracker-v2';
 const urlsToCache = [
-    '/',
     '/manifest.json',
     '/icons/icon-192.png',
     '/icons/icon-512.png'
@@ -9,7 +8,11 @@ const urlsToCache = [
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(urlsToCache))
+            .then(cache =>
+                Promise.allSettled(
+                    urlsToCache.map(url => cache.add(url).catch(err => console.warn('SW: failed to cache', url, err)))
+                )
+            )
     );
     self.skipWaiting();
 });
