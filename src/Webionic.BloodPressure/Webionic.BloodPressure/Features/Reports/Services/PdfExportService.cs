@@ -141,7 +141,7 @@ public class PdfExportService : IPdfExportService
         if (valueRange == 0) valueRange = 1;
 
         float ToY(int value) => marginTop + chartHeight - (chartHeight * (value - minVal) / valueRange);
-        float ToX(int index) => marginLeft + (chartWidth * index / (readings.Count - 1));
+        float ToX(int index) => readings.Count <= 1 ? marginLeft : marginLeft + (chartWidth * index / (readings.Count - 1));
 
         var sb = new StringBuilder();
         sb.AppendLine(CultureInfo.InvariantCulture, $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\">");
