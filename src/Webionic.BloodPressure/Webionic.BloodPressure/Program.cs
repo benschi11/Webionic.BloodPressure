@@ -53,6 +53,13 @@ builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 
+// Ensure the data directory exists for SQLite
+var dataDir = Path.GetDirectoryName(connectionString.Replace("Data Source=", ""));
+if (!string.IsNullOrEmpty(dataDir))
+{
+    Directory.CreateDirectory(dataDir);
+}
+
 // Auto-apply migrations on startup
 using (var scope = app.Services.CreateScope())
 {
