@@ -29,4 +29,8 @@ RUN dotnet publish "./Webionic.BloodPressure.csproj" -c $BUILD_CONFIGURATION -o 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+USER root
+RUN mkdir -p /app/data && chown $APP_UID:$APP_UID /app/data
+USER $APP_UID
+VOLUME /app/data
 ENTRYPOINT ["dotnet", "Webionic.BloodPressure.dll"]
