@@ -312,6 +312,33 @@ h1:focus {
     border-radius: 12px 0 0 12px;
 }
 
+/* ============ DateTime Picker ============ */
+
+.datetime-picker-group {
+    display: flex;
+    gap: 8px;
+}
+
+.datetime-picker-field {
+    flex: 1;
+    position: relative;
+}
+
+.datetime-picker-field i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.datetime-picker-field .form-control {
+    padding-left: 40px;
+}
+
 /* ============ Buttons ============ */
 
 .btn-bp-primary {
