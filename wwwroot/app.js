@@ -1,5 +1,20 @@
 // BlutdruckTracker JS interop
 
+// Capture PWA install prompt
+window.deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.deferredPrompt = e;
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.style.display = 'inline-block';
+});
+
+window.addEventListener('appinstalled', () => {
+    window.deferredPrompt = null;
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.style.display = 'none';
+});
+
 window.blazorInterop = {
     // Register service worker for PWA
     registerServiceWorker: async function () {

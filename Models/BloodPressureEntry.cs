@@ -6,15 +6,12 @@ public class BloodPressureEntry
 {
     public int Id { get; set; }
 
-    [Required]
     [Range(50, 300, ErrorMessage = "Systole muss zwischen 50 und 300 liegen.")]
     public int Systole { get; set; }
 
-    [Required]
     [Range(30, 200, ErrorMessage = "Diastole muss zwischen 30 und 200 liegen.")]
     public int Diastole { get; set; }
 
-    [Required]
     [Range(30, 250, ErrorMessage = "Puls muss zwischen 30 und 250 liegen.")]
     public int Pulse { get; set; }
 

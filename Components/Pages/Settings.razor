@@ -195,16 +195,60 @@
     {
         if (settings is null) return;
         var now = DateTime.Now;
-        var reminderDateTime = new DateTime(now.Year, now.Month, now.Day,
-            settings.ReminderTime.Hour, settings.ReminderTime.Minute, 0);
 
-        if (reminderDateTime <= now)
-            reminderDateTime = reminderDateTime.AddDays(1);
+        // Find the next enabled day
+        for (int i = 1; i <= 7; i++)
+        {
+            var candidate = now.AddDays(i);
+            var isEnabled = candidate.DayOfWeek switch
+            {
+                DayOfWeek.Monday => settings.MondayEnabled,
+                DayOfWeek.Tuesday => settings.TuesdayEnabled,
+                DayOfWeek.Wednesday => settings.WednesdayEnabled,
+                DayOfWeek.Thursday => settings.ThursdayEnabled,
+                DayOfWeek.Friday => settings.FridayEnabled,
+                DayOfWeek.Saturday => settings.SaturdayEnabled,
+                DayOfWeek.Sunday => settings.SundayEnabled,
+                _ => false
+            };
 
-        var delay = (int)(reminderDateTime - now).TotalMilliseconds;
-        await JS.InvokeVoidAsync("blazorInterop.scheduleReminder",
-            "daily-reminder", delay,
-            "BlutdruckTracker", "Zeit für deine Blutdruckmessung! 🩺", null);
+            if (!isEnabled) continue;
+
+            var reminderDateTime = new DateTime(candidate.Year, candidate.Month, candidate.Day,
+                settings.ReminderTime.Hour, settings.ReminderTime.Minute, 0);
+
+            // Also check today if time hasn't passed yet
+            if (i == 1)
+            {
+                var todayReminder = new DateTime(now.Year, now.Month, now.Day,
+                    settings.ReminderTime.Hour, settings.ReminderTime.Minute, 0);
+                var todayEnabled = now.DayOfWeek switch
+                {
+                    DayOfWeek.Monday => settings.MondayEnabled,
+                    DayOfWeek.Tuesday => settings.TuesdayEnabled,
+                    DayOfWeek.Wednesday => settings.WednesdayEnabled,
+                    DayOfWeek.Thursday => settings.ThursdayEnabled,
+                    DayOfWeek.Friday => settings.FridayEnabled,
+                    DayOfWeek.Saturday => settings.SaturdayEnabled,
+                    DayOfWeek.Sunday => settings.SundayEnabled,
+                    _ => false
+                };
+                if (todayEnabled && todayReminder > now)
+                {
+                    var todayDelay = (int)(todayReminder - now).TotalMilliseconds;
+                    await JS.InvokeVoidAsync("blazorInterop.scheduleReminder",
+                        "daily-reminder", todayDelay,
+                        "BlutdruckTracker", "Zeit für deine Blutdruckmessung! 🩺", null);
+                    return;
+                }
+            }
+
+            var delay = (int)(reminderDateTime - now).TotalMilliseconds;
+            await JS.InvokeVoidAsync("blazorInterop.scheduleReminder",
+                "daily-reminder", delay,
+                "BlutdruckTracker", "Zeit für deine Blutdruckmessung! 🩺", null);
+            return;
+        }
     }
 
     private async Task InstallPwa()

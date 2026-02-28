@@ -11,7 +11,7 @@
     <h1 class="h4 mt-3 mb-3">📋 Messungsverlauf</h1>
 
     <div class="d-flex gap-2 mb-3 flex-wrap">
-        <select class="form-select form-select-sm w-auto" @bind="filterDays">
+        <select class="form-select form-select-sm w-auto" @bind="filterDays" @bind:after="LoadEntries">
             <option value="7">Letzte 7 Tage</option>
             <option value="30">Letzte 30 Tage</option>
             <option value="90">Letzte 90 Tage</option>
