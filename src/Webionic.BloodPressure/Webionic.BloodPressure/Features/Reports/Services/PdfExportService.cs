@@ -211,7 +211,7 @@ public class PdfExportService : IPdfExportService
     private static void AppendDataPoints(StringBuilder sb, List<BloodPressureReadingDto> readings, Func<BloodPressureReadingDto, int> selector, Func<int, float> toX, Func<int, float> toY, string color)
     {
         var maxPoints = 30;
-        var interval = Math.Max(1, readings.Count / maxPoints);
+        var interval = Math.Max(1, (int)Math.Ceiling((double)readings.Count / maxPoints));
         for (var i = 0; i < readings.Count; i += interval)
         {
             var x = toX(i);
