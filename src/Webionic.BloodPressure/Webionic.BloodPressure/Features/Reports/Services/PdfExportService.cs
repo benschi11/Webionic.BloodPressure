@@ -147,7 +147,7 @@ public class PdfExportService : IPdfExportService
         float ToX(int index) => readings.Count <= 1 ? marginLeft : marginLeft + (chartWidth * index / (readings.Count - 1));
 
         var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\">");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\" font-family=\"sans-serif\">");
 
         // Grid lines, Y-axis labels and tick marks
         var gridSteps = 5;
