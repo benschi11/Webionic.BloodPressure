@@ -1,0 +1,72 @@
+@using Microsoft.JSInterop
+@using Webionic.BloodPressure.Features.BloodPressure.Models
+@implements IAsyncDisposable
+
+<div class="chart-container">
+    <canvas id="@canvasId"></canvas>
+</div>
+
+@code {
+    [Parameter] public List<BloodPressureReadingDto> Readings { get; set; } = [];
+    [Parameter] public string ChartType { get; set; } = "bloodpressure";
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private string canvasId = $"chart-{Guid.NewGuid():N}";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Readings.Count == 0) return;
+
+        var labels = Readings.Select(r => r.Timestamp.ToLocalTime().ToString("dd.MM.")).ToArray();
+
+        object[] datasets;
+
+        if (ChartType == "pulse")
+        {
+            datasets =
+            [
+                new
+                {
+                    label = "Puls",
+                    data = Readings.Select(r => (object)r.Pulse).ToArray(),
+                    color = "#2a9d8f",
+                    fill = false
+                }
+            ];
+        }
+        else
+        {
+            datasets =
+            [
+                new
+                {
+                    label = "Systole",
+                    data = Readings.Select(r => (object)r.Systolic).ToArray(),
+                    color = "#e63946",
+                    fill = false
+                },
+                new
+                {
+                    label = "Diastole",
+                    data = Readings.Select(r => (object)r.Diastolic).ToArray(),
+                    color = "#457b9d",
+                    fill = false
+                }
+            ];
+        }
+
+        await JS.InvokeVoidAsync("chartInterop.createLineChart", canvasId, labels, datasets);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("chartInterop.destroyChart", canvasId);
+        }
+        catch
+        {
+            // Ignore errors during disposal (e.g., circuit disconnected)
+        }
+    }
+}

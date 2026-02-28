@@ -1,0 +1,55 @@
+@using Webionic.BloodPressure.Features.Reminders.Models
+
+@if (Reminders.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-bell d-block"></i>
+        <p>Noch keine Erinnerungen eingerichtet</p>
+    </div>
+}
+else
+{
+    @foreach (var reminder in Reminders)
+    {
+        <div class="reminder-item">
+            <div class="reminder-time">@reminder.Time.ToString("HH:mm")</div>
+            <div class="reminder-info">
+                <div class="reminder-label">@reminder.Label</div>
+                <div class="reminder-days">@GetDaysText(reminder)</div>
+            </div>
+            <div class="reminder-toggle">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" checked="@reminder.IsActive"
+                           @onchange="() => OnToggle.InvokeAsync(reminder)" />
+                </div>
+            </div>
+            <div class="reminder-actions">
+                <button class="reading-delete" @onclick="() => OnDelete.InvokeAsync(reminder.Id)" title="Löschen">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public List<ReminderDto> Reminders { get; set; } = [];
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+    [Parameter] public EventCallback<ReminderDto> OnToggle { get; set; }
+
+    private static string GetDaysText(ReminderDto reminder)
+    {
+        var days = new List<string>();
+        if (reminder.Monday) days.Add("Mo");
+        if (reminder.Tuesday) days.Add("Di");
+        if (reminder.Wednesday) days.Add("Mi");
+        if (reminder.Thursday) days.Add("Do");
+        if (reminder.Friday) days.Add("Fr");
+        if (reminder.Saturday) days.Add("Sa");
+        if (reminder.Sunday) days.Add("So");
+
+        if (days.Count == 7) return "Jeden Tag";
+        if (days.Count == 0) return "Keine Tage ausgewählt";
+        return string.Join(", ", days);
+    }
+}

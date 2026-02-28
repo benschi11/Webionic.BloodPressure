@@ -4,9 +4,9 @@ namespace Webionic.BloodPressure.Features.Reminders.Services;
 
 public interface IReminderService
 {
-    Task<List<Reminder>> GetRemindersAsync(string userId);
-    Task<Reminder?> GetReminderByIdAsync(int id, string userId);
-    Task AddReminderAsync(Reminder reminder);
-    Task UpdateReminderAsync(Reminder reminder);
+    Task<List<ReminderDto>> GetRemindersAsync(string userId);
+    Task<ReminderDto?> GetReminderByIdAsync(int id, string userId);
+    Task<ReminderDto> AddReminderAsync(ReminderFormModel form, string userId);
+    Task UpdateReminderAsync(ReminderDto dto);
     Task DeleteReminderAsync(int id, string userId);
 }

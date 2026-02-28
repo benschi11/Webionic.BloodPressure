@@ -1,0 +1,62 @@
+@using System.ComponentModel.DataAnnotations
+@using Webionic.BloodPressure.Features.BloodPressure.Models
+
+<EditForm Model="Model" OnValidSubmit="HandleSubmit" FormName="@FormName" class="bp-form">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label class="form-label">Systole (mmHg)</label>
+        <div class="input-group">
+            <InputNumber @bind-Value="Model.Systolic" class="form-control" placeholder="z.B. 120"
+                         min="60" max="250" id="systolic-input" />
+            <span class="input-group-text">mmHg</span>
+        </div>
+        <ValidationMessage For="@(() => Model.Systolic)" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Diastole (mmHg)</label>
+        <div class="input-group">
+            <InputNumber @bind-Value="Model.Diastolic" class="form-control" placeholder="z.B. 80"
+                         min="30" max="150" />
+            <span class="input-group-text">mmHg</span>
+        </div>
+        <ValidationMessage For="@(() => Model.Diastolic)" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Puls (bpm)</label>
+        <div class="input-group">
+            <InputNumber @bind-Value="Model.Pulse" class="form-control" placeholder="z.B. 72"
+                         min="30" max="220" />
+            <span class="input-group-text">bpm</span>
+        </div>
+        <ValidationMessage For="@(() => Model.Pulse)" />
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label">Notizen (optional)</label>
+        <InputTextArea @bind-Value="Model.Notes" class="form-control" placeholder="z.B. nach dem Sport, morgens..."
+                       rows="2" style="resize: none;" />
+    </div>
+
+    <button type="submit" class="btn btn-bp-primary" disabled="@IsSubmitting">
+        @if (IsSubmitting)
+        {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+        }
+        <i class="bi bi-heart-pulse me-1"></i> Messung speichern
+    </button>
+</EditForm>
+
+@code {
+    [Parameter] public ReadingFormModel Model { get; set; } = new();
+    [Parameter] public EventCallback<ReadingFormModel> OnSubmit { get; set; }
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public string FormName { get; set; } = "reading-form";
+
+    private async Task HandleSubmit()
+    {
+        await OnSubmit.InvokeAsync(Model);
+    }
+}

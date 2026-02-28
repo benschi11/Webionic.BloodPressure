@@ -1,6 +1,33 @@
 ﻿@inherits LayoutComponentBase
 
-@Body
+<div class="app-container">
+    <main class="app-main">
+        @Body
+    </main>
+
+    <AuthorizeView>
+        <Authorized>
+            <nav class="bottom-nav">
+                <NavLink href="/" class="bottom-nav-item" Match="NavLinkMatch.All">
+                    <i class="bi bi-house-heart-fill"></i>
+                    <span>Home</span>
+                </NavLink>
+                <NavLink href="/add" class="bottom-nav-item">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span>Messen</span>
+                </NavLink>
+                <NavLink href="/report" class="bottom-nav-item">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Report</span>
+                </NavLink>
+                <NavLink href="/reminders" class="bottom-nav-item">
+                    <i class="bi bi-bell-fill"></i>
+                    <span>Erinnerung</span>
+                </NavLink>
+            </nav>
+        </Authorized>
+    </AuthorizeView>
+</div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.

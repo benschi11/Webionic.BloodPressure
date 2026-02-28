@@ -6,5 +6,5 @@ namespace Webionic.BloodPressure.Features.Reports.Services;
 public interface IReportService
 {
     Task<BloodPressureStats> GetStatsAsync(string userId, DateTime? from = null, DateTime? to = null);
-    Task<List<BloodPressureReading>> GetReadingsForChartAsync(string userId, int days = 30);
+    Task<List<BloodPressureReadingDto>> GetReadingsForChartAsync(string userId, int days = 30);
 }
