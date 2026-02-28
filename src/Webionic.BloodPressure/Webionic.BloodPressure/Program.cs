@@ -54,7 +54,8 @@ builder.Services.AddScoped<IReportService, ReportService>();
 var app = builder.Build();
 
 // Ensure the data directory exists for SQLite
-var dataDir = Path.GetDirectoryName(connectionString.Replace("Data Source=", ""));
+var sqliteConnectionStringBuilder = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connectionString);
+var dataDir = Path.GetDirectoryName(sqliteConnectionStringBuilder.DataSource);
 if (!string.IsNullOrEmpty(dataDir))
 {
     Directory.CreateDirectory(dataDir);
