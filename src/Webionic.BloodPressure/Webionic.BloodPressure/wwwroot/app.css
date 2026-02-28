@@ -644,6 +644,41 @@ h1:focus {
 
 /* ============ Account Pages ============ */
 
+/* ============ Manage Nav Menu ============ */
+
+.nav-pills .nav-link {
+    color: var(--bp-dark);
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-pills .nav-link i {
+    font-size: 1.1rem;
+    color: var(--bp-primary);
+}
+
+.nav-pills .nav-link:hover {
+    background: var(--bp-primary-light);
+    color: var(--bp-primary-dark);
+}
+
+.nav-pills .nav-link.active {
+    background: var(--bp-primary);
+    color: white;
+}
+
+.nav-pills .nav-link.active i {
+    color: white;
+}
+
+/* ============ Account Container ============ */
+
 .account-container {
     min-height: 100dvh;
     display: flex;

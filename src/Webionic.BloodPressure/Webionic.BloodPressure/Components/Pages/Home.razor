@@ -98,11 +98,15 @@
         </div>
     }
 
-    <div style="text-align: center; padding: 8px 0 16px;">
+    <div style="text-align: center; padding: 8px 0 16px; display: flex; justify-content: center; gap: 16px; align-items: center;">
+        <a href="Account/Manage" style="color: #999; font-size: 0.8rem; text-decoration: none;">
+            <i class="bi bi-person-gear"></i> Konto verwalten
+        </a>
+        <span style="color: #ddd;">|</span>
         <form method="post" action="Account/Logout" style="display: inline;">
             <AntiforgeryToken />
             <input type="hidden" name="ReturnUrl" value="/" />
-            <button type="submit" class="btn btn-link" style="color: #999; font-size: 0.8rem; text-decoration: none;">
+            <button type="submit" class="btn btn-link" style="color: #999; font-size: 0.8rem; text-decoration: none; padding: 0; border: 0;">
                 <i class="bi bi-box-arrow-right"></i> Abmelden
             </button>
         </form>
