@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/Webionic.BloodPressure.AppHost/Webionic.BloodPressure.AppHost.csproj" />
+  <Project Path="src/Webionic.BloodPressure.ServiceDefaults/Webionic.BloodPressure.ServiceDefaults.csproj" />
+  <Project Path="src/Webionic.BloodPressure.Client/Webionic.BloodPressure.Client.csproj" />
+  <Project Path="src/Webionic.BloodPressure/Webionic.BloodPressure.csproj" />
+</Solution>
