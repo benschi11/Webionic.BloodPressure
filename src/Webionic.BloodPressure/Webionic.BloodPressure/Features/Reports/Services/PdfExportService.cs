@@ -110,31 +110,34 @@ public class PdfExportService : IPdfExportService
         container.Column(col =>
         {
             col.Item().Text(title).FontSize(14).Bold().FontColor(Colors.Blue.Darken2);
-            col.Item().PaddingTop(5).Height(180).Svg(GenerateChartSvg(readings, chartType));
+            col.Item().PaddingTop(5).Height(200).Svg(GenerateChartSvg(readings, chartType));
         });
     }
 
     private static string GenerateChartSvg(List<BloodPressureReadingDto> readings, string chartType)
     {
         const float width = 515;
-        const float height = 180;
-        const float marginLeft = 40;
-        const float marginBottom = 30;
-        const float marginTop = 15;
-        const float marginRight = 10;
+        const float height = 200;
+        const float marginLeft = 50;
+        const float marginBottom = 35;
+        const float marginTop = 20;
+        const float marginRight = 15;
         var chartWidth = width - marginLeft - marginRight;
         var chartHeight = height - marginBottom - marginTop;
 
         int minVal, maxVal;
+        string unit;
         if (chartType == "pulse")
         {
             minVal = Math.Max(0, readings.Min(r => r.Pulse) - 10);
             maxVal = readings.Max(r => r.Pulse) + 10;
+            unit = "bpm";
         }
         else
         {
             minVal = Math.Max(0, readings.Min(r => Math.Min(r.Systolic, r.Diastolic)) - 10);
             maxVal = readings.Max(r => Math.Max(r.Systolic, r.Diastolic)) + 10;
+            unit = "mmHg";
         }
 
         var valueRange = maxVal - minVal;
@@ -146,43 +149,82 @@ public class PdfExportService : IPdfExportService
         var sb = new StringBuilder();
         sb.AppendLine(CultureInfo.InvariantCulture, $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\">");
 
-        // Grid lines and Y-axis labels
+        // Grid lines, Y-axis labels and tick marks
         var gridSteps = 5;
         for (var i = 0; i <= gridSteps; i++)
         {
             var y = marginTop + chartHeight - (chartHeight * i / gridSteps);
             var val = minVal + (valueRange * i / gridSteps);
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft}\" y1=\"{y}\" x2=\"{marginLeft + chartWidth}\" y2=\"{y}\" stroke=\"#d0d0d0\" stroke-width=\"0.5\"/>");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"2\" y=\"{y + 3}\" font-size=\"8\" fill=\"#888\">{val}</text>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft}\" y1=\"{y}\" x2=\"{marginLeft + chartWidth}\" y2=\"{y}\" stroke=\"#e0e0e0\" stroke-width=\"0.5\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft - 4}\" y1=\"{y}\" x2=\"{marginLeft}\" y2=\"{y}\" stroke=\"#666\" stroke-width=\"1\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{marginLeft - 7}\" y=\"{y + 3}\" font-size=\"9\" fill=\"#555\" text-anchor=\"end\">{val}</text>");
         }
 
-        // X-axis labels
+        // Y-axis unit label (rotated)
+        var yCenter = marginTop + chartHeight / 2;
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"10\" y=\"{yCenter}\" font-size=\"10\" fill=\"#444\" text-anchor=\"middle\" transform=\"rotate(-90, 10, {yCenter})\">{unit}</text>");
+
+        // Axis lines
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft}\" y1=\"{marginTop}\" x2=\"{marginLeft}\" y2=\"{marginTop + chartHeight}\" stroke=\"#666\" stroke-width=\"1\"/>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft}\" y1=\"{marginTop + chartHeight}\" x2=\"{marginLeft + chartWidth}\" y2=\"{marginTop + chartHeight}\" stroke=\"#666\" stroke-width=\"1\"/>");
+
+        // X-axis labels with tick marks
         var labelInterval = Math.Max(1, readings.Count / 8);
         for (var i = 0; i < readings.Count; i += labelInterval)
         {
             var x = ToX(i);
             var label = readings[i].Timestamp.ToLocalTime().ToString("dd.MM.");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{x - 12}\" y=\"{height - 5}\" font-size=\"8\" fill=\"#888\">{label}</text>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{x}\" y1=\"{marginTop + chartHeight}\" x2=\"{x}\" y2=\"{marginTop + chartHeight + 4}\" stroke=\"#666\" stroke-width=\"1\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{x}\" y=\"{height - 8}\" font-size=\"8\" fill=\"#555\" text-anchor=\"middle\">{label}</text>");
         }
 
         if (chartType == "pulse")
         {
             sb.AppendLine($"  <polyline fill=\"none\" stroke=\"#2a9d8f\" stroke-width=\"2\" points=\"{BuildPoints(readings, r => r.Pulse, ToX, ToY)}\"/>");
+            AppendDataPoints(sb, readings, r => r.Pulse, ToX, ToY, "#2a9d8f");
+
+            // Legend
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft + 5}\" y1=\"{marginTop - 6}\" x2=\"{marginLeft + 20}\" y2=\"{marginTop - 6}\" stroke=\"#2a9d8f\" stroke-width=\"2\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <circle cx=\"{marginLeft + 12.5f}\" cy=\"{marginTop - 6}\" r=\"2.5\" fill=\"#2a9d8f\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{marginLeft + 23}\" y=\"{marginTop - 2}\" font-size=\"9\" fill=\"#2a9d8f\">Puls</text>");
         }
         else
         {
             sb.AppendLine($"  <polyline fill=\"none\" stroke=\"#e63946\" stroke-width=\"2\" points=\"{BuildPoints(readings, r => r.Systolic, ToX, ToY)}\"/>");
             sb.AppendLine($"  <polyline fill=\"none\" stroke=\"#457b9d\" stroke-width=\"2\" points=\"{BuildPoints(readings, r => r.Diastolic, ToX, ToY)}\"/>");
+            AppendDataPoints(sb, readings, r => r.Systolic, ToX, ToY, "#e63946");
+            AppendDataPoints(sb, readings, r => r.Diastolic, ToX, ToY, "#457b9d");
 
             // Legend
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft + 5}\" y1=\"{marginTop + 2}\" x2=\"{marginLeft + 20}\" y2=\"{marginTop + 2}\" stroke=\"#e63946\" stroke-width=\"2\"/>");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{marginLeft + 23}\" y=\"{marginTop + 6}\" font-size=\"9\" fill=\"#e63946\">Systole</text>");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft + 75}\" y1=\"{marginTop + 2}\" x2=\"{marginLeft + 90}\" y2=\"{marginTop + 2}\" stroke=\"#457b9d\" stroke-width=\"2\"/>");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{marginLeft + 93}\" y=\"{marginTop + 6}\" font-size=\"9\" fill=\"#457b9d\">Diastole</text>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft + 5}\" y1=\"{marginTop - 6}\" x2=\"{marginLeft + 20}\" y2=\"{marginTop - 6}\" stroke=\"#e63946\" stroke-width=\"2\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <circle cx=\"{marginLeft + 12.5f}\" cy=\"{marginTop - 6}\" r=\"2.5\" fill=\"#e63946\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{marginLeft + 23}\" y=\"{marginTop - 2}\" font-size=\"9\" fill=\"#e63946\">Systole</text>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft + 75}\" y1=\"{marginTop - 6}\" x2=\"{marginLeft + 90}\" y2=\"{marginTop - 6}\" stroke=\"#457b9d\" stroke-width=\"2\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <circle cx=\"{marginLeft + 82.5f}\" cy=\"{marginTop - 6}\" r=\"2.5\" fill=\"#457b9d\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{marginLeft + 93}\" y=\"{marginTop - 2}\" font-size=\"9\" fill=\"#457b9d\">Diastole</text>");
         }
 
         sb.AppendLine("</svg>");
         return sb.ToString();
+    }
+
+    private static void AppendDataPoints(StringBuilder sb, List<BloodPressureReadingDto> readings, Func<BloodPressureReadingDto, int> selector, Func<int, float> toX, Func<int, float> toY, string color)
+    {
+        var maxPoints = 30;
+        var interval = Math.Max(1, (int)Math.Ceiling((double)readings.Count / maxPoints));
+        for (var i = 0; i < readings.Count; i += interval)
+        {
+            var x = toX(i);
+            var y = toY(selector(readings[i]));
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <circle cx=\"{x:F1}\" cy=\"{y:F1}\" r=\"2.5\" fill=\"{color}\"/>");
+        }
+
+        if (readings.Count > 1 && (readings.Count - 1) % interval != 0)
+        {
+            var x = toX(readings.Count - 1);
+            var y = toY(selector(readings[readings.Count - 1]));
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <circle cx=\"{x:F1}\" cy=\"{y:F1}\" r=\"2.5\" fill=\"{color}\"/>");
+        }
     }
 
     private static string BuildPoints(List<BloodPressureReadingDto> readings, Func<BloodPressureReadingDto, int> selector, Func<int, float> toX, Func<int, float> toY)
