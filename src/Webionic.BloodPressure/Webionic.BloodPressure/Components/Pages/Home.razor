@@ -1,7 +1,141 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Webionic.BloodPressure.Features.BloodPressure.Services
+@using Webionic.BloodPressure.Features.BloodPressure.Models
+@attribute [Authorize]
+@inject IBloodPressureService BpService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Blutdruck Tracker</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="page-header">
+    <h1>💓 Blutdruck Tracker</h1>
+    <p>Deine Gesundheit im Blick</p>
+</div>
 
-Welcome to your new app.
+<div class="content-container" style="margin-top: 16px;">
+    @if (latestReading is not null)
+    {
+        <div class="bp-card">
+            <div class="bp-card-header">
+                <i class="bi bi-heart-pulse"></i>
+                Letzte Messung
+                <span class="bp-badge @GetClassification(latestReading.Systolic, latestReading.Diastolic)" style="margin-left: auto;">
+                    @GetClassificationText(latestReading.Systolic, latestReading.Diastolic)
+                </span>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-card stat-systolic">
+                    <div class="stat-value">@latestReading.Systolic</div>
+                    <div class="stat-label">Systole</div>
+                </div>
+                <div class="stat-card stat-diastolic">
+                    <div class="stat-value">@latestReading.Diastolic</div>
+                    <div class="stat-label">Diastole</div>
+                </div>
+                <div class="stat-card stat-pulse">
+                    <div class="stat-value">@latestReading.Pulse</div>
+                    <div class="stat-label">Puls</div>
+                </div>
+            </div>
+            <div style="text-align: center; color: #999; font-size: 0.8rem;">
+                <i class="bi bi-clock"></i> @latestReading.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+            </div>
+        </div>
+    }
+
+    @if (recentReadings.Count > 0)
+    {
+        <div class="bp-card">
+            <div class="bp-card-header">
+                <i class="bi bi-clock-history"></i>
+                Letzte Messungen
+            </div>
+            @foreach (var reading in recentReadings.Take(5))
+            {
+                <div class="reading-item">
+                    <div class="reading-icon @GetClassification(reading.Systolic, reading.Diastolic)">
+                        <i class="bi bi-heart-pulse"></i>
+                    </div>
+                    <div class="reading-body">
+                        <div class="reading-values">
+                            @reading.Systolic/@reading.Diastolic mmHg · @reading.Pulse bpm
+                        </div>
+                        <div class="reading-meta">
+                            @reading.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                            @if (!string.IsNullOrWhiteSpace(reading.Notes))
+                            {
+                                <span> · @reading.Notes</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (recentReadings.Count > 5)
+            {
+                <div style="text-align: center; padding-top: 12px;">
+                    <a href="/report" class="btn btn-bp-secondary" style="width: auto; display: inline-block; padding: 8px 20px; font-size: 0.85rem;">
+                        Alle anzeigen <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="bp-card">
+            <div class="empty-state">
+                <i class="bi bi-heart-pulse d-block"></i>
+                <p><strong>Noch keine Messungen</strong></p>
+                <p>Starte jetzt mit deiner ersten Blutdruckmessung!</p>
+                <a href="/add" class="btn btn-bp-primary" style="width: auto; display: inline-block; padding: 12px 32px;">
+                    <i class="bi bi-plus-circle"></i> Jetzt messen
+                </a>
+            </div>
+        </div>
+    }
+
+    <div style="text-align: center; padding: 8px 0 16px;">
+        <form method="post" action="Account/Logout" style="display: inline;">
+            <AntiforgeryToken />
+            <input type="hidden" name="ReturnUrl" value="/" />
+            <button type="submit" class="btn btn-link" style="color: #999; font-size: 0.8rem; text-decoration: none;">
+                <i class="bi bi-box-arrow-right"></i> Abmelden
+            </button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private List<BloodPressureReadingDto> recentReadings = [];
+    private BloodPressureReadingDto? latestReading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId is not null)
+        {
+            recentReadings = await BpService.GetReadingsAsync(userId, 10);
+            latestReading = recentReadings.FirstOrDefault();
+        }
+    }
+
+    private static string GetClassification(int systolic, int diastolic)
+    {
+        if (systolic < 120 && diastolic < 80) return "normal";
+        if (systolic < 140 || diastolic < 90) return "elevated";
+        return "high";
+    }
+
+    private static string GetClassificationText(int systolic, int diastolic)
+    {
+        if (systolic < 120 && diastolic < 80) return "Normal";
+        if (systolic < 140 || diastolic < 90) return "Erhöht";
+        return "Hoch";
+    }
+}

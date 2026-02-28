@@ -1,0 +1,138 @@
+@page "/report"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Webionic.BloodPressure.Features.BloodPressure.Models
+@using Webionic.BloodPressure.Features.BloodPressure.Services
+@using Webionic.BloodPressure.Features.Reports.Models
+@using Webionic.BloodPressure.Features.Reports.Services
+@using Webionic.BloodPressure.Features.Reports.Components
+@attribute [Authorize]
+@inject IReportService ReportService
+@inject IBloodPressureService BpService
+@inject AuthenticationStateProvider AuthStateProvider
+@rendermode InteractiveServer
+
+<PageTitle>Report</PageTitle>
+
+<div class="page-header">
+    <h1><i class="bi bi-graph-up me-2"></i>Report</h1>
+    <p>Dein Blutdruckverlauf im Überblick</p>
+</div>
+
+<div class="content-container" style="margin-top: 16px;">
+    <div class="period-selector">
+        <button class="period-btn @(selectedDays == 7 ? "active" : "")" @onclick="() => ChangePeriod(7)">7 Tage</button>
+        <button class="period-btn @(selectedDays == 30 ? "active" : "")" @onclick="() => ChangePeriod(30)">30 Tage</button>
+        <button class="period-btn @(selectedDays == 90 ? "active" : "")" @onclick="() => ChangePeriod(90)">90 Tage</button>
+        <button class="period-btn @(selectedDays == 365 ? "active" : "")" @onclick="() => ChangePeriod(365)">1 Jahr</button>
+    </div>
+
+    <div class="bp-card">
+        <div class="bp-card-header">
+            <i class="bi bi-bar-chart-line"></i>
+            Statistik
+            <span style="margin-left: auto; font-size: 0.8rem; color: #999; font-weight: 400;">
+                @stats.TotalReadings Messungen
+            </span>
+        </div>
+        <StatsCard Stats="stats" />
+    </div>
+
+    @if (chartReadings.Count > 1)
+    {
+        <div class="bp-card">
+            <div class="bp-card-header">
+                <i class="bi bi-graph-up"></i>
+                Blutdruckverlauf
+            </div>
+            <BloodPressureChart Readings="chartReadings" ChartType="bloodpressure" />
+        </div>
+
+        <div class="bp-card">
+            <div class="bp-card-header">
+                <i class="bi bi-activity"></i>
+                Pulsverlauf
+            </div>
+            <BloodPressureChart Readings="chartReadings" ChartType="pulse" />
+        </div>
+    }
+
+    @if (allReadings.Count > 0)
+    {
+        <div class="bp-card">
+            <div class="bp-card-header">
+                <i class="bi bi-list-ul"></i>
+                Alle Messungen
+            </div>
+            @foreach (var reading in allReadings)
+            {
+                <div class="reading-item">
+                    <div class="reading-icon @GetClassification(reading.Systolic, reading.Diastolic)">
+                        <i class="bi bi-heart-pulse"></i>
+                    </div>
+                    <div class="reading-body">
+                        <div class="reading-values">
+                            @reading.Systolic/@reading.Diastolic mmHg
+                            <span style="color: var(--bp-success);">· @reading.Pulse bpm</span>
+                        </div>
+                        <div class="reading-meta">
+                            @reading.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                            @if (!string.IsNullOrWhiteSpace(reading.Notes))
+                            {
+                                <span> · @reading.Notes</span>
+                            }
+                        </div>
+                    </div>
+                    <button class="reading-delete" @onclick="() => DeleteReading(reading.Id)" title="Löschen">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private int selectedDays = 30;
+    private BloodPressureStats stats = new();
+    private List<BloodPressureReadingDto> chartReadings = [];
+    private List<BloodPressureReadingDto> allReadings = [];
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (currentUserId is null) return;
+
+        var fromDate = DateTime.UtcNow.AddDays(-selectedDays);
+        stats = await ReportService.GetStatsAsync(currentUserId, fromDate);
+        chartReadings = await ReportService.GetReadingsForChartAsync(currentUserId, selectedDays);
+        allReadings = await BpService.GetReadingsAsync(currentUserId, 100);
+    }
+
+    private async Task ChangePeriod(int days)
+    {
+        selectedDays = days;
+        await LoadData();
+    }
+
+    private async Task DeleteReading(int id)
+    {
+        if (currentUserId is null) return;
+        await BpService.DeleteReadingAsync(id, currentUserId);
+        await LoadData();
+    }
+
+    private static string GetClassification(int systolic, int diastolic)
+    {
+        if (systolic < 120 && diastolic < 80) return "normal";
+        if (systolic < 140 || diastolic < 90) return "elevated";
+        return "high";
+    }
+}

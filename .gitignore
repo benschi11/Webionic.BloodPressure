@@ -58,3 +58,8 @@ nunit-*.xml
 
 # Visual Studio Code
 .vs
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal

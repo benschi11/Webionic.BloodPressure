@@ -1,0 +1,90 @@
+@page "/add"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Webionic.BloodPressure.Features.BloodPressure.Models
+@using Webionic.BloodPressure.Features.BloodPressure.Services
+@using Webionic.BloodPressure.Features.BloodPressure.Components
+@attribute [Authorize]
+@inject IBloodPressureService BpService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Messung erfassen</PageTitle>
+
+<div class="page-header">
+    <h1><i class="bi bi-plus-circle me-2"></i>Neue Messung</h1>
+    <p>Erfasse deinen aktuellen Blutdruck</p>
+</div>
+
+<div class="content-container" style="margin-top: 16px;">
+    @if (isSuccessVisible)
+    {
+        <div class="success-toast">
+            <i class="bi bi-check-circle me-1"></i> Messung gespeichert!
+        </div>
+    }
+
+    <div class="bp-card">
+        <div class="bp-card-header">
+            <i class="bi bi-heart-pulse"></i>
+            Werte eingeben
+        </div>
+
+        <ReadingForm Model="formModel" OnSubmit="SaveReading" IsSubmitting="isSaving" FormName="add-reading" />
+    </div>
+
+    @if (recentReadings.Count > 0)
+    {
+        <div class="bp-card">
+            <div class="bp-card-header">
+                <i class="bi bi-clock-history"></i>
+                Zuletzt erfasst
+            </div>
+            <ReadingList Readings="recentReadings" />
+        </div>
+    }
+</div>
+
+@code {
+    private ReadingFormModel formModel = new();
+    private List<BloodPressureReadingDto> recentReadings = [];
+    private bool isSaving;
+    private bool isSuccessVisible;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (currentUserId is not null)
+        {
+            recentReadings = await BpService.GetReadingsAsync(currentUserId, 3);
+        }
+    }
+
+    private async Task SaveReading(ReadingFormModel model)
+    {
+        if (currentUserId is null) return;
+
+        isSaving = true;
+
+        await BpService.AddReadingAsync(model, currentUserId);
+
+        isSuccessVisible = true;
+        StateHasChanged();
+
+        recentReadings = await BpService.GetReadingsAsync(currentUserId, 3);
+        formModel = new ReadingFormModel();
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000);
+            isSuccessVisible = false;
+            await InvokeAsync(StateHasChanged);
+        });
+
+        isSaving = false;
+    }
+}

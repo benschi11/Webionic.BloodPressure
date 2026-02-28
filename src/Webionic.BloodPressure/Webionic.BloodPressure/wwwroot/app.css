@@ -1,18 +1,571 @@
+/* =============================================
+   Blood Pressure Tracker - Mobile-First Design
+   ============================================= */
+
+:root {
+    --bp-primary: #e63946;
+    --bp-primary-dark: #c1121f;
+    --bp-primary-light: #fce4e6;
+    --bp-success: #2a9d8f;
+    --bp-warning: #e9c46a;
+    --bp-danger: #e63946;
+    --bp-info: #457b9d;
+    --bp-dark: #1d3557;
+    --bp-light: #f8f9fa;
+    --bp-bg: #f0f2f5;
+    --bp-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    --bp-card-radius: 16px;
+    --bp-nav-height: 68px;
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    height: 100%;
+    background-color: var(--bp-bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    overscroll-behavior-y: contain;
+}
+
+body {
+    padding-bottom: 0;
+}
+
 h1:focus {
     outline: none;
 }
 
+/* ============ App Container ============ */
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+}
+
+.app-main {
+    flex: 1;
+    padding-bottom: calc(var(--bp-nav-height) + 16px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ============ Bottom Navigation ============ */
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bp-nav-height);
+    background: #ffffff;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-top: 1px solid rgba(0,0,0,0.04);
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 6px 12px;
+    color: #999;
+    text-decoration: none;
+    font-size: 0.68rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    min-width: 60px;
+}
+
+.bottom-nav-item i {
+    font-size: 1.35rem;
+    transition: transform 0.2s ease;
+}
+
+.bottom-nav-item:hover,
+.bottom-nav-item:focus {
+    color: var(--bp-primary);
+    text-decoration: none;
+}
+
+.bottom-nav-item.active {
+    color: var(--bp-primary);
+    background: var(--bp-primary-light);
+}
+
+.bottom-nav-item.active i {
+    transform: scale(1.1);
+}
+
+/* ============ Page Header ============ */
+
+.page-header {
+    background: linear-gradient(135deg, var(--bp-primary) 0%, var(--bp-primary-dark) 100%);
+    color: white;
+    padding: 24px 20px 32px;
+    margin-bottom: -16px;
+    position: relative;
+}
+
+.page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.page-header p {
+    opacity: 0.85;
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+/* ============ Cards ============ */
+
+.bp-card {
+    background: white;
+    border-radius: var(--bp-card-radius);
+    box-shadow: var(--bp-card-shadow);
+    padding: 20px;
+    margin-bottom: 16px;
+    border: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bp-card:active {
+    transform: scale(0.98);
+}
+
+.bp-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--bp-dark);
+}
+
+.bp-card-header i {
+    font-size: 1.2rem;
+    color: var(--bp-primary);
+}
+
+/* ============ Content Container ============ */
+
+.content-container {
+    padding: 0 16px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============ Stat Cards ============ */
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 14px;
+    padding: 14px 12px;
+    text-align: center;
+    box-shadow: var(--bp-card-shadow);
+}
+
+.stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stat-card .stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-top: 4px;
+}
+
+.stat-systolic .stat-value { color: var(--bp-danger); }
+.stat-diastolic .stat-value { color: var(--bp-info); }
+.stat-pulse .stat-value { color: var(--bp-success); }
+
+/* ============ Reading Item ============ */
+
+.reading-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    gap: 14px;
+}
+
+.reading-item:last-child {
+    border-bottom: none;
+}
+
+.reading-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.reading-icon.normal {
+    background: #d4edda;
+    color: #155724;
+}
+
+.reading-icon.elevated {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.reading-icon.high {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.reading-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.reading-values {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--bp-dark);
+}
+
+.reading-meta {
+    font-size: 0.78rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.reading-delete {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.2rem;
+    padding: 8px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.reading-delete:hover {
+    color: var(--bp-danger);
+}
+
+/* ============ Forms ============ */
+
+.bp-form .form-control,
+.bp-form .form-select {
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 1rem;
+    border: 2px solid #e9ecef;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background: #fafafa;
+}
+
+.bp-form .form-control:focus,
+.bp-form .form-select:focus {
+    border-color: var(--bp-primary);
+    box-shadow: 0 0 0 3px var(--bp-primary-light);
+    background: white;
+}
+
+.bp-form .form-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.bp-form .input-group-text {
+    border-radius: 0 12px 12px 0;
+    background: #f0f2f5;
+    border: 2px solid #e9ecef;
+    border-left: none;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.bp-form .input-group .form-control {
+    border-radius: 12px 0 0 12px;
+}
+
+/* ============ Buttons ============ */
+
+.btn-bp-primary {
+    background: linear-gradient(135deg, var(--bp-primary) 0%, var(--bp-primary-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    width: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 4px 14px rgba(230, 57, 70, 0.3);
+}
+
+.btn-bp-primary:hover,
+.btn-bp-primary:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(230, 57, 70, 0.4);
+    color: white;
+}
+
+.btn-bp-primary:active {
+    transform: translateY(0);
+}
+
+.btn-bp-secondary {
+    background: white;
+    color: var(--bp-dark);
+    border: 2px solid #e9ecef;
+    border-radius: 14px;
+    padding: 12px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.15s ease;
+}
+
+.btn-bp-secondary:hover {
+    background: #f8f9fa;
+    border-color: var(--bp-primary);
+    color: var(--bp-primary);
+}
+
+/* ============ Chart Container ============ */
+
+.chart-container {
+    position: relative;
+    height: 260px;
+    width: 100%;
+}
+
+/* ============ Reminder Item ============ */
+
+.reminder-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: white;
+    border-radius: var(--bp-card-radius);
+    box-shadow: var(--bp-card-shadow);
+    margin-bottom: 12px;
+    gap: 14px;
+}
+
+.reminder-time {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--bp-dark);
+    min-width: 70px;
+}
+
+.reminder-info {
+    flex: 1;
+}
+
+.reminder-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--bp-dark);
+}
+
+.reminder-days {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.reminder-toggle .form-check-input {
+    width: 48px;
+    height: 26px;
+    cursor: pointer;
+}
+
+.reminder-toggle .form-check-input:checked {
+    background-color: var(--bp-primary);
+    border-color: var(--bp-primary);
+}
+
+.reminder-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* ============ Day Selector ============ */
+
+.day-selector {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.day-chip {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: white;
+    color: #666;
+}
+
+.day-chip.active {
+    background: var(--bp-primary);
+    color: white;
+    border-color: var(--bp-primary);
+}
+
+/* ============ Empty State ============ */
+
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: #999;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.empty-state p {
+    font-size: 0.95rem;
+}
+
+/* ============ Blood Pressure Classification ============ */
+
+.bp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.bp-badge.normal {
+    background: #d4edda;
+    color: #155724;
+}
+
+.bp-badge.elevated {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.bp-badge.high {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* ============ Toast / Success Animation ============ */
+
+.success-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bp-success);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    z-index: 2000;
+    box-shadow: 0 4px 20px rgba(42, 157, 143, 0.4);
+    animation: slideDown 0.3s ease, fadeOut 0.3s ease 2.5s;
+}
+
+@keyframes slideDown {
+    from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; }
+}
+
+/* ============ Period Selector ============ */
+
+.period-selector {
+    display: flex;
+    background: #f0f2f5;
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 16px;
+}
+
+.period-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.period-btn.active {
+    background: white;
+    color: var(--bp-dark);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* ============ Validation ============ */
+
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    outline: none;
+    border-color: var(--bp-success) !important;
 }
 
 .invalid {
-    outline: 1px solid #e50000;
+    outline: none;
+    border-color: var(--bp-danger) !important;
 }
 
 .validation-message {
-    color: #e50000;
+    color: var(--bp-danger);
+    font-size: 0.8rem;
+    margin-top: 4px;
 }
+
+/* ============ Error Boundary ============ */
 
 .blazor-error-boundary {
     background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
@@ -20,9 +573,11 @@ h1:focus {
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
+
+/* ============ Form Helpers ============ */
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
@@ -35,4 +590,65 @@ h1:focus {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
+}
+
+/* ============ Loading Spinner ============ */
+
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.loading-spinner::after {
+    content: '';
+    width: 36px;
+    height: 36px;
+    border: 3px solid #eee;
+    border-top-color: var(--bp-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============ Account Pages ============ */
+
+.account-container {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background: var(--bp-bg);
+}
+
+.account-card {
+    background: white;
+    border-radius: var(--bp-card-radius);
+    box-shadow: var(--bp-card-shadow);
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.account-logo {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.account-logo i {
+    font-size: 2.5rem;
+    color: var(--bp-primary);
+}
+
+.account-logo h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--bp-dark);
+    margin-top: 8px;
 }

@@ -1,0 +1,171 @@
+@page "/reminders"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
+@using Webionic.BloodPressure.Features.Reminders.Models
+@using Webionic.BloodPressure.Features.Reminders.Services
+@using Webionic.BloodPressure.Features.Reminders.Components
+@attribute [Authorize]
+@inject IReminderService ReminderService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Erinnerungen</PageTitle>
+
+<div class="page-header">
+    <h1><i class="bi bi-bell me-2"></i>Erinnerungen</h1>
+    <p>Vergiss nie wieder deine Messung</p>
+</div>
+
+<div class="content-container" style="margin-top: 16px;">
+    @if (!string.IsNullOrEmpty(notificationPermission) && notificationPermission != "granted")
+    {
+        <div class="bp-card" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="bi bi-exclamation-triangle" style="font-size: 1.5rem; color: #856404;"></i>
+                <div>
+                    <strong>Benachrichtigungen nicht aktiviert</strong>
+                    <p style="margin: 4px 0 0; font-size: 0.85rem; color: #856404;">
+                        Erlaube Benachrichtigungen, um Erinnerungen zu erhalten.
+                    </p>
+                </div>
+            </div>
+            <button class="btn btn-bp-primary mt-3" style="font-size: 0.9rem; padding: 10px 20px;" @onclick="RequestPermission">
+                <i class="bi bi-bell me-1"></i> Benachrichtigungen erlauben
+            </button>
+        </div>
+    }
+
+    @if (isSuccessVisible)
+    {
+        <div class="success-toast">
+            <i class="bi bi-check-circle me-1"></i> Erinnerung gespeichert!
+        </div>
+    }
+
+    <div class="bp-card">
+        <div class="bp-card-header">
+            <i class="bi bi-list-check"></i>
+            Deine Erinnerungen
+        </div>
+        <ReminderList Reminders="reminders" OnDelete="DeleteReminder" OnToggle="ToggleReminder" />
+    </div>
+
+    @if (isFormVisible)
+    {
+        <div class="bp-card">
+            <div class="bp-card-header">
+                <i class="bi bi-plus-circle"></i>
+                Neue Erinnerung
+                <button class="btn btn-link ms-auto p-0" style="color: #999;" @onclick="() => isFormVisible = false">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <ReminderForm Model="formModel" OnSubmit="SaveReminder" IsSubmitting="isSaving" />
+        </div>
+    }
+    else
+    {
+        <button class="btn btn-bp-primary" @onclick="() => isFormVisible = true">
+            <i class="bi bi-plus-circle me-1"></i> Neue Erinnerung
+        </button>
+    }
+</div>
+
+@code {
+    private List<ReminderDto> reminders = [];
+    private ReminderFormModel formModel = new();
+    private bool isFormVisible;
+    private bool isSaving;
+    private bool isSuccessVisible;
+    private string? currentUserId;
+    private string? notificationPermission;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        await LoadReminders();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            notificationPermission = await JS.InvokeAsync<string>("notificationInterop.getPermission");
+            StateHasChanged();
+            await ScheduleActiveReminders();
+        }
+    }
+
+    private async Task LoadReminders()
+    {
+        if (currentUserId is null) return;
+        reminders = await ReminderService.GetRemindersAsync(currentUserId);
+    }
+
+    private async Task SaveReminder(ReminderFormModel model)
+    {
+        if (currentUserId is null) return;
+
+        isSaving = true;
+        await ReminderService.AddReminderAsync(model, currentUserId);
+
+        isSuccessVisible = true;
+        isFormVisible = false;
+        StateHasChanged();
+
+        await LoadReminders();
+        formModel = new ReminderFormModel();
+
+        await ScheduleActiveReminders();
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000);
+            isSuccessVisible = false;
+            await InvokeAsync(StateHasChanged);
+        });
+
+        isSaving = false;
+    }
+
+    private async Task ToggleReminder(ReminderDto reminder)
+    {
+        if (currentUserId is null) return;
+        reminder.IsActive = !reminder.IsActive;
+        await ReminderService.UpdateReminderAsync(reminder);
+        await LoadReminders();
+        await ScheduleActiveReminders();
+    }
+
+    private async Task DeleteReminder(int id)
+    {
+        if (currentUserId is null) return;
+        await ReminderService.DeleteReminderAsync(id, currentUserId);
+        await JS.InvokeVoidAsync("notificationInterop.cancelReminder", id);
+        await LoadReminders();
+    }
+
+    private async Task RequestPermission()
+    {
+        notificationPermission = await JS.InvokeAsync<string>("notificationInterop.requestPermission");
+    }
+
+    private async Task ScheduleActiveReminders()
+    {
+        foreach (var reminder in reminders)
+        {
+            if (reminder.IsActive)
+            {
+                await JS.InvokeVoidAsync("notificationInterop.scheduleReminder",
+                    reminder.Id, reminder.Time.Hour, reminder.Time.Minute, reminder.Label);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("notificationInterop.cancelReminder", reminder.Id);
+            }
+        }
+    }
+}

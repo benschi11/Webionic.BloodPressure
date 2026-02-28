@@ -1,0 +1,56 @@
+@using Webionic.BloodPressure.Features.Reminders.Models
+
+<div class="bp-form">
+    <div class="mb-3">
+        <label class="form-label">Uhrzeit</label>
+        <input type="time" class="form-control" value="@TimeString" @onchange="OnTimeChanged" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Bezeichnung</label>
+        <input type="text" class="form-control" @bind="Model.Label" placeholder="z.B. Morgenmessung" />
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label">Wochentage</label>
+        <div class="day-selector">
+            <div class="day-chip @(Model.Monday ? "active" : "")" @onclick="() => Model.Monday = !Model.Monday">Mo</div>
+            <div class="day-chip @(Model.Tuesday ? "active" : "")" @onclick="() => Model.Tuesday = !Model.Tuesday">Di</div>
+            <div class="day-chip @(Model.Wednesday ? "active" : "")" @onclick="() => Model.Wednesday = !Model.Wednesday">Mi</div>
+            <div class="day-chip @(Model.Thursday ? "active" : "")" @onclick="() => Model.Thursday = !Model.Thursday">Do</div>
+            <div class="day-chip @(Model.Friday ? "active" : "")" @onclick="() => Model.Friday = !Model.Friday">Fr</div>
+            <div class="day-chip @(Model.Saturday ? "active" : "")" @onclick="() => Model.Saturday = !Model.Saturday">Sa</div>
+            <div class="day-chip @(Model.Sunday ? "active" : "")" @onclick="() => Model.Sunday = !Model.Sunday">So</div>
+        </div>
+    </div>
+
+    <button class="btn btn-bp-primary" @onclick="HandleSubmit" disabled="@IsSubmitting">
+        @if (IsSubmitting)
+        {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+        }
+        <i class="bi bi-bell me-1"></i> @ButtonText
+    </button>
+</div>
+
+@code {
+    [Parameter] public ReminderFormModel Model { get; set; } = new();
+    [Parameter] public EventCallback<ReminderFormModel> OnSubmit { get; set; }
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public string ButtonText { get; set; } = "Erinnerung speichern";
+
+    private string TimeString => Model.Time.ToString("HH:mm");
+
+    private void OnTimeChanged(ChangeEventArgs e)
+    {
+        if (TimeOnly.TryParse(e.Value?.ToString(), out var parsedTime))
+        {
+            Model.Time = parsedTime;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        await OnSubmit.InvokeAsync(Model);
+    }
+}

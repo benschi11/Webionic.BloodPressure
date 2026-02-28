@@ -1,11 +1,19 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#e63946" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <base href="/" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <ResourcePreloader />
+    <link href="lib/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="lib/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["Webionic.BloodPressure.styles.css"]" />
     <ImportMap />
@@ -15,6 +23,10 @@
 <body>
     <Routes />
     <ReconnectModal />
+    <script src="lib/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="lib/chart.umd.min.js"></script>
+    <script src="@Assets["js/chart-interop.js"]"></script>
+    <script src="@Assets["js/notification-interop.js"]"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["Components/Account/Shared/PasskeySubmit.razor.js"]" type="module"></script>
 </body>

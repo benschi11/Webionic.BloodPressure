@@ -1,0 +1,51 @@
+@using Webionic.BloodPressure.Features.BloodPressure.Models
+
+@if (Readings.Count == 0)
+{
+    <div class="empty-state">
+        <i class="bi bi-journal-medical d-block"></i>
+        <p>Noch keine Messungen vorhanden</p>
+    </div>
+}
+else
+{
+    @foreach (var reading in Readings)
+    {
+        <div class="reading-item">
+            <div class="reading-icon @GetClassification(reading.Systolic, reading.Diastolic)">
+                <i class="bi bi-heart-pulse"></i>
+            </div>
+            <div class="reading-body">
+                <div class="reading-values">
+                    @reading.Systolic/@reading.Diastolic mmHg
+                    <span style="color: var(--bp-success);">· @reading.Pulse bpm</span>
+                </div>
+                <div class="reading-meta">
+                    @reading.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                    @if (!string.IsNullOrWhiteSpace(reading.Notes))
+                    {
+                        <span> · @reading.Notes</span>
+                    }
+                </div>
+            </div>
+            @if (OnDelete.HasDelegate)
+            {
+                <button class="reading-delete" @onclick="() => OnDelete.InvokeAsync(reading.Id)" title="Löschen">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public List<BloodPressureReadingDto> Readings { get; set; } = [];
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    private static string GetClassification(int systolic, int diastolic)
+    {
+        if (systolic < 120 && diastolic < 80) return "normal";
+        if (systolic < 140 || diastolic < 90) return "elevated";
+        return "high";
+    }
+}
