@@ -1,12 +1,15 @@
 {
+    "id": "/",
     "name": "Blutdruck Tracker",
     "short_name": "BP Tracker",
     "description": "Tracke deinen Blutdruck einfach und übersichtlich",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#f8f9fa",
     "theme_color": "#e63946",
     "orientation": "portrait",
+    "categories": ["health", "medical", "lifestyle"],
     "icons": [
         {
             "src": "icons/icon-192.png",
