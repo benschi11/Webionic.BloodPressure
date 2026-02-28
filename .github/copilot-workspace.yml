@@ -1,0 +1,6 @@
+network:
+  domains:
+    - registry.npmjs.org    # Falls du npm/Node.js nutzt
+    - api.nuget.org         # Falls du ein .NET Backend hast
+    - github.com
+    - raw.githubusercontent.com
