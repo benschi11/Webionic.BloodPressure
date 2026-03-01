@@ -12,12 +12,22 @@
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private string canvasId = $"chart-{Guid.NewGuid():N}";
+    private int _utcOffsetMinutes;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            try
+            {
+                _utcOffsetMinutes = await JS.InvokeAsync<int>("timezoneInterop.getBrowserUtcOffsetMinutes");
+            }
+            catch { /* JS not available */ }
+        }
+
         if (Readings.Count == 0) return;
 
-        var labels = Readings.Select(r => r.Timestamp.ToLocalTime().ToString("dd.MM.")).ToArray();
+        var labels = Readings.Select(r => r.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.")).ToArray();
 
         object[] datasets;
 

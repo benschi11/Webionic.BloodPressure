@@ -1,6 +1,7 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Globalization
 @using Webionic.BloodPressure.Features.BloodPressure.Models
+@inject IJSRuntime JS
 
 <EditForm Model="Model" OnValidSubmit="HandleSubmit" FormName="@FormName" class="bp-form">
     <DataAnnotationsValidator />
@@ -71,8 +72,28 @@
     [Parameter] public bool IsSubmitting { get; set; }
     [Parameter] public string FormName { get; set; } = "reading-form";
 
+    private int _utcOffsetMinutes;
+
     private string DateString => Model.Timestamp.ToString("yyyy-MM-dd");
     private string TimeString => Model.Timestamp.ToString("HH:mm");
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var localNow = await JS.InvokeAsync<string>("timezoneInterop.getBrowserLocalNow");
+                if (DateTime.TryParseExact(localNow, "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var localDateTime))
+                {
+                    Model.Timestamp = localDateTime;
+                }
+                _utcOffsetMinutes = await JS.InvokeAsync<int>("timezoneInterop.getBrowserUtcOffsetMinutes");
+                StateHasChanged();
+            }
+            catch { /* JS not available */ }
+        }
+    }
 
     private void OnDateChanged(ChangeEventArgs e)
     {
@@ -94,6 +115,14 @@
 
     private async Task HandleSubmit()
     {
-        await OnSubmit.InvokeAsync(Model);
+        var modelToSubmit = new ReadingFormModel
+        {
+            Systolic = Model.Systolic,
+            Diastolic = Model.Diastolic,
+            Pulse = Model.Pulse,
+            Notes = Model.Notes,
+            Timestamp = DateTime.SpecifyKind(Model.Timestamp.AddMinutes(-_utcOffsetMinutes), DateTimeKind.Utc)
+        };
+        await OnSubmit.InvokeAsync(modelToSubmit);
     }
 }
