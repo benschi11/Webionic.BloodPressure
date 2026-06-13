@@ -32,20 +32,66 @@ else
                     }
                 </div>
             </div>
+            @if (OnEdit.HasDelegate)
+            {
+                <button class="reading-edit" @onclick="() => OnEdit.InvokeAsync(reading.Id)" title="Bearbeiten"
+                        aria-label="Messung bearbeiten">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            }
             @if (OnDelete.HasDelegate)
             {
-                <button class="reading-delete" @onclick="() => OnDelete.InvokeAsync(reading.Id)" title="Löschen">
+                <button class="reading-delete" @onclick="() => RequestDelete(reading.Id)" title="Löschen"
+                        aria-label="Messung löschen">
                     <i class="bi bi-trash3"></i>
                 </button>
             }
         </div>
+        @if (_pendingDeleteId == reading.Id)
+        {
+            <div class="delete-confirm" role="alertdialog" aria-modal="true"
+                 aria-labelledby="delete-confirm-title-@reading.Id">
+                <span id="delete-confirm-title-@reading.Id">Messung wirklich löschen?</span>
+                <div class="delete-confirm-actions">
+                    <button class="btn btn-bp-danger-sm" @onclick="ConfirmDelete" aria-label="Löschen bestätigen">
+                        Löschen
+                    </button>
+                    <button class="btn btn-bp-secondary-sm" @onclick="CancelDelete" aria-label="Abbrechen">
+                        Abbrechen
+                    </button>
+                </div>
+            </div>
+        }
     }
 }
 
 @code {
     [Parameter] public List<BloodPressureReadingDto> Readings { get; set; } = [];
     [Parameter] public EventCallback<int> OnDelete { get; set; }
+    [Parameter] public EventCallback<int> OnEdit { get; set; }
     [Parameter] public int UtcOffsetMinutes { get; set; }
+
+    private int? _pendingDeleteId;
+
+    private void RequestDelete(int id)
+    {
+        _pendingDeleteId = id;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_pendingDeleteId.HasValue)
+        {
+            var id = _pendingDeleteId.Value;
+            _pendingDeleteId = null;
+            await OnDelete.InvokeAsync(id);
+        }
+    }
+
+    private void CancelDelete()
+    {
+        _pendingDeleteId = null;
+    }
 
     private static string GetClassification(int systolic, int diastolic)
     {

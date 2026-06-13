@@ -273,6 +273,71 @@ h1:focus {
     color: var(--bp-danger);
 }
 
+.reading-edit {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.1rem;
+    padding: 8px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.reading-edit:hover {
+    color: var(--bp-primary);
+}
+
+.delete-confirm {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #fff3cd;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    color: #856404;
+    margin-bottom: 4px;
+}
+
+.delete-confirm-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-bp-danger-sm {
+    background: var(--bp-danger);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 5px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-bp-danger-sm:hover {
+    opacity: 0.85;
+}
+
+.btn-bp-secondary-sm {
+    background: #e9ecef;
+    color: #555;
+    border: none;
+    border-radius: 8px;
+    padding: 5px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-bp-secondary-sm:hover {
+    background: #dee2e6;
+}
+
 /* ============ Forms ============ */
 
 .bp-form .form-control,

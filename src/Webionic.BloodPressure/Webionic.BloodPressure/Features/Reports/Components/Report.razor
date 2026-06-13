@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Webionic.BloodPressure.Features.BloodPressure.Models
 @using Webionic.BloodPressure.Features.BloodPressure.Services
+@using Webionic.BloodPressure.Features.BloodPressure.Components
 @using Webionic.BloodPressure.Features.Reports.Models
 @using Webionic.BloodPressure.Features.Reports.Services
 @using Webionic.BloodPressure.Features.Reports.Components
@@ -10,6 +11,7 @@
 @inject IReportService ReportService
 @inject IBloodPressureService BpService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
@@ -71,34 +73,8 @@
                 <i class="bi bi-list-ul"></i>
                 Alle Messungen
             </div>
-            @foreach (var reading in allReadings)
-            {
-                <div class="reading-item">
-                    <div class="reading-icon @GetClassification(reading.Systolic, reading.Diastolic)">
-                        <i class="bi bi-heart-pulse"></i>
-                    </div>
-                    <div class="reading-body">
-                        <div class="reading-values">
-                            @reading.Systolic/@reading.Diastolic mmHg
-                            <span style="color: var(--bp-success);">· @reading.Pulse bpm</span>
-                        </div>
-                        <div class="reading-meta">
-                            @reading.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
-                            @if (reading.ArmSide is not null)
-                            {
-                                <span> · @reading.ArmSide.ToDisplayText()</span>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(reading.Notes))
-                            {
-                                <span> · @reading.Notes</span>
-                            }
-                        </div>
-                    </div>
-                    <button class="reading-delete" @onclick="() => DeleteReading(reading.Id)" title="Löschen">
-                        <i class="bi bi-trash3"></i>
-                    </button>
-                </div>
-            }
+            <ReadingList Readings="allReadings" UtcOffsetMinutes="_utcOffsetMinutes"
+                         OnEdit="EditReading" OnDelete="DeleteReading" />
         </div>
     }
 </div>
@@ -154,10 +130,8 @@
         await LoadData();
     }
 
-    private static string GetClassification(int systolic, int diastolic)
+    private void EditReading(int id)
     {
-        if (systolic < 120 && diastolic < 80) return "normal";
-        if (systolic < 140 || diastolic < 90) return "elevated";
-        return "high";
+        Nav.NavigateTo($"/edit/{id}");
     }
 }
