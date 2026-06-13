@@ -22,6 +22,10 @@ else
                 </div>
                 <div class="reading-meta">
                     @reading.Timestamp.AddMinutes(UtcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
+                    @if (reading.ArmSide is not null)
+                    {
+                        <span> · @reading.ArmSide.ToDisplayText()</span>
+                    }
                     @if (!string.IsNullOrWhiteSpace(reading.Notes))
                     {
                         <span> · @reading.Notes</span>

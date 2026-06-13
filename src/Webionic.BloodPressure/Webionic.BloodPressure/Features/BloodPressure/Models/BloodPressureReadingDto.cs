@@ -8,5 +8,6 @@ public class BloodPressureReadingDto
     public int Pulse { get; set; }
     public DateTime Timestamp { get; set; }
     public string? Notes { get; set; }
+    public ArmSide? ArmSide { get; set; }
     public string UserId { get; set; } = default!;
 }

@@ -251,6 +251,7 @@ public class PdfExportService : IPdfExportService
                     columns.RelativeColumn(1); // Systolic
                     columns.RelativeColumn(1); // Diastolic
                     columns.RelativeColumn(1); // Pulse
+                    columns.RelativeColumn(1); // ArmSide
                     columns.RelativeColumn(2); // Notes
                 });
 
@@ -260,6 +261,7 @@ public class PdfExportService : IPdfExportService
                     header.Cell().Background(Colors.Blue.Darken2).Padding(5).Text("Systole").FontSize(9).FontColor(Colors.White).Bold();
                     header.Cell().Background(Colors.Blue.Darken2).Padding(5).Text("Diastole").FontSize(9).FontColor(Colors.White).Bold();
                     header.Cell().Background(Colors.Blue.Darken2).Padding(5).Text("Puls").FontSize(9).FontColor(Colors.White).Bold();
+                    header.Cell().Background(Colors.Blue.Darken2).Padding(5).Text("Arm").FontSize(9).FontColor(Colors.White).Bold();
                     header.Cell().Background(Colors.Blue.Darken2).Padding(5).Text("Notizen").FontSize(9).FontColor(Colors.White).Bold();
                 });
 
@@ -272,6 +274,7 @@ public class PdfExportService : IPdfExportService
                     table.Cell().Background(bgColor).Padding(4).Text($"{reading.Systolic} mmHg").FontSize(9);
                     table.Cell().Background(bgColor).Padding(4).Text($"{reading.Diastolic} mmHg").FontSize(9);
                     table.Cell().Background(bgColor).Padding(4).Text($"{reading.Pulse} bpm").FontSize(9);
+                    table.Cell().Background(bgColor).Padding(4).Text(reading.ArmSide.ToDisplayText("-")).FontSize(9);
                     table.Cell().Background(bgColor).Padding(4).Text(reading.Notes ?? "").FontSize(9);
 
                     isAlternate = !isAlternate;
@@ -279,4 +282,5 @@ public class PdfExportService : IPdfExportService
             });
         });
     }
+
 }

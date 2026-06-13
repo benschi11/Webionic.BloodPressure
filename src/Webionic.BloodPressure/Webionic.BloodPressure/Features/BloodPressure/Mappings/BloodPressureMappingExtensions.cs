@@ -14,6 +14,7 @@ public static class BloodPressureMappingExtensions
             Pulse = entity.Pulse,
             Timestamp = entity.Timestamp,
             Notes = entity.Notes,
+            ArmSide = entity.ArmSide,
             UserId = entity.UserId
         };
     }
@@ -31,6 +32,7 @@ public static class BloodPressureMappingExtensions
             Diastolic = form.Diastolic,
             Pulse = form.Pulse,
             Notes = form.Notes,
+            ArmSide = form.ArmSide,
             UserId = userId,
             Timestamp = form.Timestamp.ToUniversalTime()
         };

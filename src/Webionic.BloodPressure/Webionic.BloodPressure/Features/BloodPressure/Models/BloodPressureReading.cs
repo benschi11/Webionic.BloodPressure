@@ -24,6 +24,8 @@ public class BloodPressureReading
     [MaxLength(500)]
     public string? Notes { get; set; }
 
+    public ArmSide? ArmSide { get; set; }
+
     [Required]
     public string UserId { get; set; } = default!;
     public ApplicationUser User { get; set; } = default!;
