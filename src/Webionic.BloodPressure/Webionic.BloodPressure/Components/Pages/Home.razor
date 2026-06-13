@@ -69,7 +69,7 @@
                             @reading.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
                             @if (reading.ArmSide is not null)
                             {
-                                <span> · @GetArmSideText(reading.ArmSide)</span>
+                                <span> · @reading.ArmSide.ToDisplayText()</span>
                             }
                             @if (!string.IsNullOrWhiteSpace(reading.Notes))
                             {
@@ -160,15 +160,5 @@
         if (systolic < 120 && diastolic < 80) return "Normal";
         if (systolic < 140 || diastolic < 90) return "Erhöht";
         return "Hoch";
-    }
-
-    private static string GetArmSideText(ArmSide? armSide)
-    {
-        return armSide switch
-        {
-            ArmSide.Left => "Links",
-            ArmSide.Right => "Rechts",
-            _ => "Nicht angegeben"
-        };
     }
 }

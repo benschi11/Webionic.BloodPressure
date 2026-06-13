@@ -274,7 +274,7 @@ public class PdfExportService : IPdfExportService
                     table.Cell().Background(bgColor).Padding(4).Text($"{reading.Systolic} mmHg").FontSize(9);
                     table.Cell().Background(bgColor).Padding(4).Text($"{reading.Diastolic} mmHg").FontSize(9);
                     table.Cell().Background(bgColor).Padding(4).Text($"{reading.Pulse} bpm").FontSize(9);
-                    table.Cell().Background(bgColor).Padding(4).Text(GetArmSideText(reading.ArmSide)).FontSize(9);
+                    table.Cell().Background(bgColor).Padding(4).Text(reading.ArmSide.ToDisplayText("-")).FontSize(9);
                     table.Cell().Background(bgColor).Padding(4).Text(reading.Notes ?? "").FontSize(9);
 
                     isAlternate = !isAlternate;
@@ -283,13 +283,4 @@ public class PdfExportService : IPdfExportService
         });
     }
 
-    private static string GetArmSideText(ArmSide? armSide)
-    {
-        return armSide switch
-        {
-            ArmSide.Left => "Links",
-            ArmSide.Right => "Rechts",
-            _ => "-"
-        };
-    }
 }
