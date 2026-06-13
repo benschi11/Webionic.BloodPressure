@@ -273,6 +273,20 @@ h1:focus {
     color: var(--bp-danger);
 }
 
+.reading-edit {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.1rem;
+    padding: 8px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.reading-edit:hover {
+    color: var(--bp-primary);
+}
+
 /* ============ Forms ============ */
 
 .bp-form .form-control,

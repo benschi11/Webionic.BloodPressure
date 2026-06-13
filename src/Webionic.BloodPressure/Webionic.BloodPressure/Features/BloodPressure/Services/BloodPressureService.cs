@@ -34,6 +34,24 @@ public class BloodPressureService(ApplicationDbContext context) : IBloodPressure
         return entity.ToDto();
     }
 
+    public async Task<bool> UpdateReadingAsync(int id, ReadingFormModel form, string userId)
+    {
+        var reading = await context.BloodPressureReadings
+            .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);
+
+        if (reading is null) return false;
+
+        reading.Systolic = form.Systolic;
+        reading.Diastolic = form.Diastolic;
+        reading.Pulse = form.Pulse;
+        reading.Notes = form.Notes;
+        reading.ArmSide = form.ArmSide;
+        reading.Timestamp = form.Timestamp.ToUniversalTime();
+
+        await context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task DeleteReadingAsync(int id, string userId)
     {
         var reading = await context.BloodPressureReadings

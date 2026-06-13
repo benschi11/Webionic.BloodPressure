@@ -1,0 +1,99 @@
+@page "/edit/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Webionic.BloodPressure.Features.BloodPressure.Models
+@using Webionic.BloodPressure.Features.BloodPressure.Services
+@attribute [Authorize]
+@inject IBloodPressureService BpService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Messung bearbeiten</PageTitle>
+
+<div class="page-header">
+    <h1><i class="bi bi-pencil-square me-2"></i>Messung bearbeiten</h1>
+    <p>Ändere deine erfasste Messung</p>
+</div>
+
+<div class="content-container" style="margin-top: 16px;">
+    @if (notFound)
+    {
+        <div class="bp-card">
+            <div class="empty-state">
+                <i class="bi bi-exclamation-circle d-block"></i>
+                <p>Messung nicht gefunden.</p>
+                <a href="/report" class="btn btn-bp-secondary" style="width: auto; display: inline-block; padding: 10px 24px;">
+                    Zurück
+                </a>
+            </div>
+        </div>
+    }
+    else if (formModel is not null)
+    {
+        <div class="bp-card">
+            <div class="bp-card-header">
+                <i class="bi bi-heart-pulse"></i>
+                Werte bearbeiten
+            </div>
+
+            <ReadingForm Model="formModel" OnSubmit="SaveReading" IsSubmitting="isSaving" FormName="edit-reading" />
+        </div>
+
+        <div style="text-align: center; margin-top: 8px;">
+            <a href="/report" class="btn btn-bp-secondary" style="width: auto; display: inline-block; padding: 10px 24px;">
+                <i class="bi bi-arrow-left me-1"></i>Abbrechen
+            </a>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ReadingFormModel? formModel;
+    private bool isSaving;
+    private bool notFound;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (currentUserId is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        var reading = await BpService.GetReadingByIdAsync(Id, currentUserId);
+
+        if (reading is null)
+        {
+            notFound = true;
+            return;
+        }
+
+        formModel = new ReadingFormModel
+        {
+            Systolic = reading.Systolic,
+            Diastolic = reading.Diastolic,
+            Pulse = reading.Pulse,
+            Notes = reading.Notes,
+            ArmSide = reading.ArmSide,
+            Timestamp = reading.Timestamp.ToLocalTime()
+        };
+    }
+
+    private async Task SaveReading(ReadingFormModel model)
+    {
+        if (currentUserId is null) return;
+
+        isSaving = true;
+        await BpService.UpdateReadingAsync(Id, model, currentUserId);
+        isSaving = false;
+
+        Nav.NavigateTo("/report");
+    }
+}
