@@ -29,6 +29,18 @@
             </div>
         </div>
     }
+    else if (unauthorized)
+    {
+        <div class="bp-card">
+            <div class="empty-state">
+                <i class="bi bi-lock d-block"></i>
+                <p>Nicht autorisiert.</p>
+                <a href="/report" class="btn btn-bp-secondary" style="width: auto; display: inline-block; padding: 10px 24px;">
+                    Zurück
+                </a>
+            </div>
+        </div>
+    }
     else if (formModel is not null)
     {
         <div class="bp-card">
@@ -54,6 +66,7 @@
     private ReadingFormModel? formModel;
     private bool isSaving;
     private bool notFound;
+    private bool unauthorized;
     private string? currentUserId;
 
     protected override async Task OnInitializedAsync()
@@ -63,7 +76,7 @@
 
         if (currentUserId is null)
         {
-            notFound = true;
+            unauthorized = true;
             return;
         }
 
