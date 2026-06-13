@@ -1,4 +1,5 @@
 @page "/report"
+@using System.Globalization
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using Webionic.BloodPressure.Features.BloodPressure.Models
@@ -38,6 +39,41 @@
 
     <div class="bp-card">
         <div class="bp-card-header">
+            <i class="bi bi-bookmark-plus"></i>
+            Zeitliche Marke setzen
+        </div>
+        <EditForm Model="markerForm" OnValidSubmit="SaveMarker" FormName="add-marker" class="bp-form">
+            <DataAnnotationsValidator />
+            <div class="mb-3">
+                <label class="form-label">Bezeichnung</label>
+                <InputText @bind-Value="markerForm.Title" class="form-control" placeholder="z.B. Medikament umgestellt" />
+                <ValidationMessage For="@(() => markerForm.Title)" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Datum & Uhrzeit</label>
+                <div class="datetime-picker-group">
+                    <div class="datetime-picker-field">
+                        <i class="bi bi-calendar3"></i>
+                        <input type="date" class="form-control" value="@MarkerDateString" @onchange="OnMarkerDateChanged" />
+                    </div>
+                    <div class="datetime-picker-field">
+                        <i class="bi bi-clock"></i>
+                        <input type="time" class="form-control" value="@MarkerTimeString" @onchange="OnMarkerTimeChanged" />
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-bp-secondary" disabled="@isSavingMarker">
+                @if (isSavingMarker)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                <i class="bi bi-bookmark-check me-1"></i> Marke speichern
+            </button>
+        </EditForm>
+    </div>
+
+    <div class="bp-card">
+        <div class="bp-card-header">
             <i class="bi bi-bar-chart-line"></i>
             Statistik
             <span style="margin-left: auto; font-size: 0.8rem; color: #999; font-weight: 400;">
@@ -54,7 +90,7 @@
                 <i class="bi bi-graph-up"></i>
                 Blutdruckverlauf
             </div>
-            <BloodPressureChart Readings="chartReadings" ChartType="bloodpressure" />
+            <BloodPressureChart Readings="chartReadings" Markers="chartMarkers" ChartType="bloodpressure" />
         </div>
 
         <div class="bp-card">
@@ -62,19 +98,74 @@
                 <i class="bi bi-activity"></i>
                 Pulsverlauf
             </div>
-            <BloodPressureChart Readings="chartReadings" ChartType="pulse" />
+            <BloodPressureChart Readings="chartReadings" Markers="chartMarkers" ChartType="pulse" />
         </div>
     }
 
-    @if (allReadings.Count > 0)
+    @if (timelineEntries.Count > 0)
     {
         <div class="bp-card">
             <div class="bp-card-header">
                 <i class="bi bi-list-ul"></i>
-                Alle Messungen
+                Alle Einträge
             </div>
-            <ReadingList Readings="allReadings" UtcOffsetMinutes="_utcOffsetMinutes"
-                         OnEdit="EditReading" OnDelete="DeleteReading" />
+            @foreach (var entry in timelineEntries)
+            {
+                if (entry.IsMarker)
+                {
+                    <div class="reading-item marker-entry">
+                        <div class="reading-icon marker">
+                            <i class="bi bi-bookmark-star"></i>
+                        </div>
+                        <div class="reading-body">
+                            <div class="reading-values marker-title">
+                                @entry.MarkerTitle
+                            </div>
+                            <div class="reading-meta">
+                                @entry.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
+                                <span class="marker-chip">Marke</span>
+                            </div>
+                        </div>
+                        <button class="reading-delete" @onclick="() => DeleteMarker(entry.Id)" title="Marke löschen"
+                                aria-label="Marke löschen">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                }
+                else if (entry.Reading is not null)
+                {
+                    <div class="reading-item">
+                        <div class="reading-icon @GetClassification(entry.Reading.Systolic, entry.Reading.Diastolic)">
+                            <i class="bi bi-heart-pulse"></i>
+                        </div>
+                        <div class="reading-body">
+                            <div class="reading-values">
+                                @entry.Reading.Systolic/@entry.Reading.Diastolic mmHg
+                                <span style="color: var(--bp-success);">· @entry.Reading.Pulse bpm</span>
+                            </div>
+                            <div class="reading-meta">
+                                @entry.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
+                                @if (entry.Reading.ArmSide is not null)
+                                {
+                                    <span> · @entry.Reading.ArmSide.ToDisplayText()</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(entry.Reading.Notes))
+                                {
+                                    <span> · @entry.Reading.Notes</span>
+                                }
+                            </div>
+                        </div>
+                        <button class="reading-edit" @onclick="() => EditReading(entry.Id)" title="Bearbeiten"
+                                aria-label="Messung bearbeiten">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="reading-delete" @onclick="() => DeleteReading(entry.Id)" title="Löschen"
+                                aria-label="Messung löschen">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                }
+            }
         </div>
     }
 </div>
@@ -83,9 +174,16 @@
     private int selectedDays = 30;
     private BloodPressureStats stats = new();
     private List<BloodPressureReadingDto> chartReadings = [];
+    private List<TimelineMarkerDto> chartMarkers = [];
     private List<BloodPressureReadingDto> allReadings = [];
+    private List<TimelineMarkerDto> timelineMarkers = [];
+    private List<TimelineEntry> timelineEntries = [];
+    private TimelineMarkerFormModel markerForm = new();
+    private bool isSavingMarker;
     private string? currentUserId;
     private int _utcOffsetMinutes;
+    private string MarkerDateString => markerForm.Timestamp.ToString("yyyy-MM-dd");
+    private string MarkerTimeString => markerForm.Timestamp.ToString("HH:mm");
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -115,6 +213,13 @@
         stats = await ReportService.GetStatsAsync(currentUserId, fromDate);
         chartReadings = await ReportService.GetReadingsForChartAsync(currentUserId, selectedDays);
         allReadings = await BpService.GetReadingsAsync(currentUserId, 100);
+        timelineMarkers = await BpService.GetTimelineMarkersAsync(currentUserId, 100);
+        chartMarkers = timelineMarkers.Where(m => m.Timestamp >= fromDate).ToList();
+        timelineEntries = allReadings
+            .Select(TimelineEntry.FromReading)
+            .Concat(timelineMarkers.Select(TimelineEntry.FromMarker))
+            .OrderByDescending(e => e.Timestamp)
+            .ToList();
     }
 
     private async Task ChangePeriod(int days)
@@ -133,5 +238,80 @@
     private void EditReading(int id)
     {
         Nav.NavigateTo($"/edit/{id}");
+    }
+
+    private async Task SaveMarker()
+    {
+        if (currentUserId is null) return;
+
+        isSavingMarker = true;
+
+        var markerToSave = new TimelineMarkerFormModel
+        {
+            Title = markerForm.Title.Trim(),
+            Timestamp = DateTime.SpecifyKind(markerForm.Timestamp.AddMinutes(-_utcOffsetMinutes), DateTimeKind.Utc)
+        };
+
+        await BpService.AddTimelineMarkerAsync(markerToSave, currentUserId);
+        markerForm = new TimelineMarkerFormModel { Timestamp = DateTime.Now };
+        await LoadData();
+        isSavingMarker = false;
+    }
+
+    private async Task DeleteMarker(int id)
+    {
+        if (currentUserId is null) return;
+        await BpService.DeleteTimelineMarkerAsync(id, currentUserId);
+        await LoadData();
+    }
+
+    private void OnMarkerDateChanged(ChangeEventArgs e)
+    {
+        if (DateOnly.TryParseExact(e.Value?.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            var time = TimeOnly.FromTimeSpan(markerForm.Timestamp.TimeOfDay);
+            markerForm.Timestamp = date.ToDateTime(time);
+        }
+    }
+
+    private void OnMarkerTimeChanged(ChangeEventArgs e)
+    {
+        if (TimeOnly.TryParseExact(e.Value?.ToString(), "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var time))
+        {
+            var date = DateOnly.FromDateTime(markerForm.Timestamp);
+            markerForm.Timestamp = date.ToDateTime(time);
+        }
+    }
+
+    private static string GetClassification(int systolic, int diastolic)
+    {
+        if (systolic < 120 && diastolic < 80) return "normal";
+        if (systolic < 140 || diastolic < 90) return "elevated";
+        return "high";
+    }
+
+    private class TimelineEntry
+    {
+        public int Id { get; private init; }
+        public DateTime Timestamp { get; private init; }
+        public bool IsMarker { get; private init; }
+        public string? MarkerTitle { get; private init; }
+        public BloodPressureReadingDto? Reading { get; private init; }
+
+        public static TimelineEntry FromReading(BloodPressureReadingDto reading) => new()
+        {
+            Id = reading.Id,
+            Timestamp = reading.Timestamp,
+            Reading = reading,
+            IsMarker = false
+        };
+
+        public static TimelineEntry FromMarker(TimelineMarkerDto marker) => new()
+        {
+            Id = marker.Id,
+            Timestamp = marker.Timestamp,
+            MarkerTitle = marker.Title,
+            IsMarker = true
+        };
     }
 }
