@@ -84,6 +84,10 @@
                         </div>
                         <div class="reading-meta">
                             @reading.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
+                            @if (reading.ArmSide is not null)
+                            {
+                                <span> · @GetArmSideText(reading.ArmSide)</span>
+                            }
                             @if (!string.IsNullOrWhiteSpace(reading.Notes))
                             {
                                 <span> · @reading.Notes</span>
@@ -155,5 +159,15 @@
         if (systolic < 120 && diastolic < 80) return "normal";
         if (systolic < 140 || diastolic < 90) return "elevated";
         return "high";
+    }
+
+    private static string GetArmSideText(ArmSide? armSide)
+    {
+        return armSide switch
+        {
+            ArmSide.Left => "Links",
+            ArmSide.Right => "Rechts",
+            _ => "Nicht angegeben"
+        };
     }
 }

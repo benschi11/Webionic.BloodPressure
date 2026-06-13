@@ -21,4 +21,6 @@ public class ReadingFormModel
 
     [MaxLength(500)]
     public string? Notes { get; set; }
+
+    public ArmSide? ArmSide { get; set; }
 }

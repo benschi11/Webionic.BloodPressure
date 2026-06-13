@@ -57,6 +57,15 @@
                        rows="2" style="resize: none;" />
     </div>
 
+    <div class="mb-4">
+        <label class="form-label">Armseite (optional)</label>
+        <InputSelect @bind-Value="Model.ArmSide" class="form-select">
+            <option value="">Nicht angegeben</option>
+            <option value="@ArmSide.Left">Links</option>
+            <option value="@ArmSide.Right">Rechts</option>
+        </InputSelect>
+    </div>
+
     <button type="submit" class="btn btn-bp-primary" disabled="@IsSubmitting">
         @if (IsSubmitting)
         {
@@ -121,6 +130,7 @@
             Diastolic = Model.Diastolic,
             Pulse = Model.Pulse,
             Notes = Model.Notes,
+            ArmSide = Model.ArmSide,
             Timestamp = DateTime.SpecifyKind(Model.Timestamp.AddMinutes(-_utcOffsetMinutes), DateTimeKind.Utc)
         };
         await OnSubmit.InvokeAsync(modelToSubmit);
