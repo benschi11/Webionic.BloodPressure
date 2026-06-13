@@ -95,25 +95,25 @@
         {
             // Ignore errors during disposal (e.g., circuit disconnected)
         }
+    }
 
-        private static int FindNearestReadingIndex(List<BloodPressureReadingDto> readings, DateTime markerTimestamp)
+    private static int FindNearestReadingIndex(List<BloodPressureReadingDto> readings, DateTime markerTimestamp)
+    {
+        if (readings.Count == 0) return -1;
+
+        var nearestIndex = 0;
+        var nearestDistance = TimeSpan.MaxValue;
+
+        for (var i = 0; i < readings.Count; i++)
         {
-            if (readings.Count == 0) return -1;
-
-            var nearestIndex = 0;
-            var nearestDistance = TimeSpan.MaxValue;
-
-            for (var i = 0; i < readings.Count; i++)
+            var distance = (readings[i].Timestamp - markerTimestamp).Duration();
+            if (distance < nearestDistance)
             {
-                var distance = (readings[i].Timestamp - markerTimestamp).Duration();
-                if (distance < nearestDistance)
-                {
-                    nearestDistance = distance;
-                    nearestIndex = i;
-                }
+                nearestDistance = distance;
+                nearestIndex = i;
             }
-
-            return nearestIndex;
         }
+
+        return nearestIndex;
     }
 }
