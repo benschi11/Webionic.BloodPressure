@@ -1,5 +1,5 @@
 window.chartInterop = {
-    createLineChart: function (canvasId, labels, datasets) {
+    createLineChart: function (canvasId, labels, datasets, markerHighlights) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
 
@@ -8,9 +8,42 @@ window.chartInterop = {
             canvas._chartInstance.destroy();
         }
 
+        const markerPlugin = {
+            id: 'timelineMarkers',
+            beforeDatasetsDraw(chart, args, pluginOptions) {
+                const highlights = pluginOptions?.highlights || [];
+                if (!highlights.length) return;
+
+                const { ctx, chartArea, scales } = chart;
+                const xScale = scales.x;
+                if (!xScale || !chartArea) return;
+
+                ctx.save();
+                highlights.forEach((highlight) => {
+                    const x = xScale.getPixelForValue(highlight.index);
+                    if (!Number.isFinite(x)) return;
+
+                    const stripWidth = 14;
+                    ctx.fillStyle = 'rgba(233, 196, 106, 0.18)';
+                    ctx.fillRect(x - stripWidth / 2, chartArea.top, stripWidth, chartArea.bottom - chartArea.top);
+
+                    ctx.strokeStyle = 'rgba(196, 132, 32, 0.45)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(x, chartArea.top);
+                    ctx.lineTo(x, chartArea.bottom);
+                    ctx.stroke();
+                });
+                ctx.restore();
+            }
+        };
+
+        const markerByIndex = new Map((markerHighlights || []).map(marker => [marker.index, marker]));
+
         const ctx = canvas.getContext('2d');
         canvas._chartInstance = new Chart(ctx, {
             type: 'line',
+            plugins: [markerPlugin],
             data: {
                 labels: labels,
                 datasets: datasets.map(ds => ({
@@ -47,7 +80,18 @@ window.chartInterop = {
                         titleFont: { size: 13 },
                         bodyFont: { size: 12 },
                         padding: 12,
-                        cornerRadius: 8
+                        cornerRadius: 8,
+                        callbacks: {
+                            afterBody: (items) => {
+                                if (!items || !items.length) return [];
+                                const marker = markerByIndex.get(items[0].dataIndex);
+                                if (!marker) return [];
+                                return [`Marke: ${marker.title}`, `Zeitpunkt: ${marker.localTimestamp}`];
+                            }
+                        }
+                    },
+                    timelineMarkers: {
+                        highlights: markerHighlights || []
                     }
                 },
                 scales: {

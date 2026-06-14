@@ -216,6 +216,14 @@ h1:focus {
     border-bottom: none;
 }
 
+.reading-item.marker-entry {
+    background: rgba(233, 196, 106, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+    margin: 6px 0;
+    border-bottom: none;
+}
+
 .reading-icon {
     width: 44px;
     height: 44px;
@@ -242,6 +250,11 @@ h1:focus {
     color: #721c24;
 }
 
+.reading-icon.marker {
+    background: #fef5d8;
+    color: #9a6700;
+}
+
 .reading-body {
     flex: 1;
     min-width: 0;
@@ -257,6 +270,24 @@ h1:focus {
     font-size: 0.78rem;
     color: #888;
     margin-top: 2px;
+}
+
+.reading-values.marker-title {
+    color: #7a4b00;
+}
+
+.marker-chip {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(233, 196, 106, 0.25);
+    color: #7a4b00;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .reading-delete {

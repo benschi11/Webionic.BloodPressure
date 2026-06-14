@@ -8,6 +8,7 @@
 
 @code {
     [Parameter] public List<BloodPressureReadingDto> Readings { get; set; } = [];
+    [Parameter] public List<TimelineMarkerDto> Markers { get; set; } = [];
     [Parameter] public string ChartType { get; set; } = "bloodpressure";
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -28,6 +29,22 @@
         if (Readings.Count == 0) return;
 
         var labels = Readings.Select(r => r.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.")).ToArray();
+
+        var markerHighlights = Markers
+            .Select(m => new
+            {
+                marker = m,
+                index = FindNearestReadingIndex(Readings, m.Timestamp)
+            })
+            .Where(x => x.index >= 0)
+            .OrderBy(x => x.index)
+            .Select(x => new
+            {
+                x.index,
+                x.marker.Title,
+                LocalTimestamp = x.marker.Timestamp.AddMinutes(_utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")
+            })
+            .ToArray();
 
         object[] datasets;
 
@@ -65,7 +82,7 @@
             ];
         }
 
-        await JS.InvokeVoidAsync("chartInterop.createLineChart", canvasId, labels, datasets);
+        await JS.InvokeVoidAsync("chartInterop.createLineChart", canvasId, labels, datasets, markerHighlights);
     }
 
     public async ValueTask DisposeAsync()
@@ -78,5 +95,25 @@
         {
             // Ignore errors during disposal (e.g., circuit disconnected)
         }
+    }
+
+    private static int FindNearestReadingIndex(List<BloodPressureReadingDto> readings, DateTime markerTimestamp)
+    {
+        if (readings.Count == 0) return -1;
+
+        var nearestIndex = 0;
+        var nearestDistance = TimeSpan.MaxValue;
+
+        for (var i = 0; i < readings.Count; i++)
+        {
+            var distance = (readings[i].Timestamp - markerTimestamp).Duration();
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestIndex = i;
+            }
+        }
+
+        return nearestIndex;
     }
 }

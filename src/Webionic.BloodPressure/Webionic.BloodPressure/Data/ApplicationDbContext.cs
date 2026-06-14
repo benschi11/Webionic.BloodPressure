@@ -8,6 +8,7 @@ namespace Webionic.BloodPressure.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<BloodPressureReading> BloodPressureReadings => Set<BloodPressureReading>();
+    public DbSet<TimelineMarker> TimelineMarkers => Set<TimelineMarker>();
     public DbSet<Reminder> Reminders => Set<Reminder>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -26,6 +27,15 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         builder.Entity<Reminder>(entity =>
         {
             entity.HasIndex(e => e.UserId);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<TimelineMarker>(entity =>
+        {
+            entity.HasIndex(e => new { e.UserId, e.Timestamp });
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
