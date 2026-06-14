@@ -80,6 +80,7 @@
     [Parameter] public EventCallback<ReadingFormModel> OnSubmit { get; set; }
     [Parameter] public bool IsSubmitting { get; set; }
     [Parameter] public string FormName { get; set; } = "reading-form";
+    [Parameter] public bool InitializeWithBrowserLocalNow { get; set; } = true;
 
     private int _utcOffsetMinutes;
 
@@ -92,10 +93,13 @@
         {
             try
             {
-                var localNow = await JS.InvokeAsync<string>("timezoneInterop.getBrowserLocalNow");
-                if (DateTime.TryParseExact(localNow, "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var localDateTime))
+                if (InitializeWithBrowserLocalNow)
                 {
-                    Model.Timestamp = localDateTime;
+                    var localNow = await JS.InvokeAsync<string>("timezoneInterop.getBrowserLocalNow");
+                    if (DateTime.TryParseExact(localNow, "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var localDateTime))
+                    {
+                        Model.Timestamp = localDateTime;
+                    }
                 }
                 _utcOffsetMinutes = await JS.InvokeAsync<int>("timezoneInterop.getBrowserUtcOffsetMinutes");
                 StateHasChanged();
