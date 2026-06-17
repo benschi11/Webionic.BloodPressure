@@ -10,9 +10,10 @@ namespace Webionic.BloodPressure.Features.Reports.Services;
 
 public class PdfExportService : IPdfExportService
 {
-    public byte[] GenerateReport(BloodPressureStats stats, List<BloodPressureReadingDto> readings, int days, int utcOffsetMinutes = 0)
+    public byte[] GenerateReport(BloodPressureStats stats, List<BloodPressureReadingDto> readings, List<TimelineMarkerDto> markers, int days, int utcOffsetMinutes = 0)
     {
         var sortedReadings = readings.OrderBy(r => r.Timestamp).ToList();
+        var sortedMarkers = markers.OrderBy(m => m.Timestamp).ToList();
         var periodLabel = days switch
         {
             7 => "7 Tage",
@@ -49,8 +50,13 @@ public class PdfExportService : IPdfExportService
                     // Blood pressure chart
                     if (sortedReadings.Count > 1)
                     {
-                        col.Item().Element(c => ComposeChart(c, sortedReadings, "Blutdruckverlauf", "bloodpressure", utcOffsetMinutes));
-                        col.Item().Element(c => ComposeChart(c, sortedReadings, "Pulsverlauf", "pulse", utcOffsetMinutes));
+                        col.Item().Element(c => ComposeChart(c, sortedReadings, sortedMarkers, "Blutdruckverlauf", "bloodpressure", utcOffsetMinutes));
+                        col.Item().Element(c => ComposeChart(c, sortedReadings, sortedMarkers, "Pulsverlauf", "pulse", utcOffsetMinutes));
+                    }
+
+                    if (sortedMarkers.Count > 0)
+                    {
+                        col.Item().Element(c => ComposeMarkersList(c, sortedMarkers.AsEnumerable().Reverse(), utcOffsetMinutes));
                     }
 
                     // Readings table
@@ -105,16 +111,16 @@ public class PdfExportService : IPdfExportService
         });
     }
 
-    private static void ComposeChart(IContainer container, List<BloodPressureReadingDto> readings, string title, string chartType, int utcOffsetMinutes = 0)
+    private static void ComposeChart(IContainer container, List<BloodPressureReadingDto> readings, List<TimelineMarkerDto> markers, string title, string chartType, int utcOffsetMinutes = 0)
     {
         container.Column(col =>
         {
             col.Item().Text(title).FontSize(14).Bold().FontColor(Colors.Blue.Darken2);
-            col.Item().PaddingTop(5).Height(200).Svg(GenerateChartSvg(readings, chartType, utcOffsetMinutes));
+            col.Item().PaddingTop(5).Height(200).Svg(GenerateChartSvg(readings, markers, chartType, utcOffsetMinutes));
         });
     }
 
-    private static string GenerateChartSvg(List<BloodPressureReadingDto> readings, string chartType, int utcOffsetMinutes = 0)
+    private static string GenerateChartSvg(List<BloodPressureReadingDto> readings, List<TimelineMarkerDto> markers, string chartType, int utcOffsetMinutes = 0)
     {
         const float width = 515;
         const float height = 200;
@@ -168,6 +174,20 @@ public class PdfExportService : IPdfExportService
         sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft}\" y1=\"{marginTop}\" x2=\"{marginLeft}\" y2=\"{marginTop + chartHeight}\" stroke=\"#666\" stroke-width=\"1\"/>");
         sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft}\" y1=\"{marginTop + chartHeight}\" x2=\"{marginLeft + chartWidth}\" y2=\"{marginTop + chartHeight}\" stroke=\"#666\" stroke-width=\"1\"/>");
 
+        foreach (var marker in markers)
+        {
+            var markerIndex = FindNearestReadingIndex(readings, marker.Timestamp);
+            if (markerIndex < 0)
+            {
+                continue;
+            }
+
+            var x = ToX(markerIndex);
+            const float stripWidth = 14;
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <rect x=\"{x - stripWidth / 2:F1}\" y=\"{marginTop}\" width=\"{stripWidth}\" height=\"{chartHeight}\" fill=\"#e9c46a\" opacity=\"0.18\"/>");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{x:F1}\" y1=\"{marginTop}\" x2=\"{x:F1}\" y2=\"{marginTop + chartHeight}\" stroke=\"#c48420\" stroke-width=\"1\" opacity=\"0.65\"/>");
+        }
+
         // X-axis labels with tick marks
         var labelInterval = Math.Max(1, readings.Count / 8);
         for (var i = 0; i < readings.Count; i += labelInterval)
@@ -187,6 +207,7 @@ public class PdfExportService : IPdfExportService
             sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft + 5}\" y1=\"{marginTop - 6}\" x2=\"{marginLeft + 20}\" y2=\"{marginTop - 6}\" stroke=\"#2a9d8f\" stroke-width=\"2\"/>");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  <circle cx=\"{marginLeft + 12.5f}\" cy=\"{marginTop - 6}\" r=\"2.5\" fill=\"#2a9d8f\"/>");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{marginLeft + 23}\" y=\"{marginTop - 2}\" font-size=\"9\" fill=\"#2a9d8f\">Puls</text>");
+            AppendMarkerLegend(sb, marginLeft + 70, marginTop);
         }
         else
         {
@@ -202,10 +223,37 @@ public class PdfExportService : IPdfExportService
             sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{marginLeft + 75}\" y1=\"{marginTop - 6}\" x2=\"{marginLeft + 90}\" y2=\"{marginTop - 6}\" stroke=\"#457b9d\" stroke-width=\"2\"/>");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  <circle cx=\"{marginLeft + 82.5f}\" cy=\"{marginTop - 6}\" r=\"2.5\" fill=\"#457b9d\"/>");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{marginLeft + 93}\" y=\"{marginTop - 2}\" font-size=\"9\" fill=\"#457b9d\">Diastole</text>");
+            AppendMarkerLegend(sb, marginLeft + 150, marginTop);
         }
 
         sb.AppendLine("</svg>");
         return sb.ToString();
+    }
+
+    private static void ComposeMarkersList(IContainer container, IEnumerable<TimelineMarkerDto> markers, int utcOffsetMinutes = 0)
+    {
+        container.Column(col =>
+        {
+            col.Item().Text("Zeitliche Marken").FontSize(14).Bold().FontColor(Colors.Blue.Darken2);
+            col.Item().PaddingTop(8).Column(list =>
+            {
+                list.Spacing(6);
+
+                foreach (var marker in markers)
+                {
+                    list.Item().Row(row =>
+                    {
+                        row.ConstantItem(14).PaddingTop(1).Text("•").FontSize(12).FontColor(Colors.Orange.Darken2);
+                        row.RelativeItem().DefaultTextStyle(style => style.FontSize(10)).Text(text =>
+                        {
+                            text.Span(marker.Title).SemiBold();
+                            text.Span(" · ");
+                            text.Span(marker.Timestamp.AddMinutes(utcOffsetMinutes).ToString("dd.MM.yyyy HH:mm")).FontColor(Colors.Grey.Darken1);
+                        });
+                    });
+                }
+            });
+        });
     }
 
     private static void AppendDataPoints(StringBuilder sb, List<BloodPressureReadingDto> readings, Func<BloodPressureReadingDto, int> selector, Func<int, float> toX, Func<int, float> toY, string color)
@@ -236,6 +284,33 @@ public class PdfExportService : IPdfExportService
             sb.Append(CultureInfo.InvariantCulture, $"{toX(i):F1},{toY(selector(readings[i])):F1}");
         }
         return sb.ToString();
+    }
+
+    private static void AppendMarkerLegend(StringBuilder sb, float startX, float marginTop)
+    {
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  <rect x=\"{startX}\" y=\"{marginTop - 11}\" width=\"12\" height=\"10\" fill=\"#e9c46a\" opacity=\"0.35\"/>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  <line x1=\"{startX + 6}\" y1=\"{marginTop - 11}\" x2=\"{startX + 6}\" y2=\"{marginTop - 1}\" stroke=\"#c48420\" stroke-width=\"1\" opacity=\"0.65\"/>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  <text x=\"{startX + 16}\" y=\"{marginTop - 2}\" font-size=\"9\" fill=\"#8a5a00\">Marke</text>");
+    }
+
+    private static int FindNearestReadingIndex(List<BloodPressureReadingDto> readings, DateTime markerTimestamp)
+    {
+        if (readings.Count == 0) return -1;
+
+        var nearestIndex = 0;
+        var nearestDistance = TimeSpan.MaxValue;
+
+        for (var i = 0; i < readings.Count; i++)
+        {
+            var distance = (readings[i].Timestamp - markerTimestamp).Duration();
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestIndex = i;
+            }
+        }
+
+        return nearestIndex;
     }
 
     private static void ComposeReadingsTable(IContainer container, List<BloodPressureReadingDto> readings, int utcOffsetMinutes = 0)
