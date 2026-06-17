@@ -14,7 +14,6 @@ public class PdfExportService : IPdfExportService
     {
         var sortedReadings = readings.OrderBy(r => r.Timestamp).ToList();
         var sortedMarkers = markers.OrderBy(m => m.Timestamp).ToList();
-        var sortedMarkersDescending = sortedMarkers.AsEnumerable().Reverse().ToList();
         var periodLabel = days switch
         {
             7 => "7 Tage",
@@ -57,7 +56,7 @@ public class PdfExportService : IPdfExportService
 
                     if (sortedMarkers.Count > 0)
                     {
-                        col.Item().Element(c => ComposeMarkersList(c, sortedMarkersDescending, utcOffsetMinutes));
+                        col.Item().Element(c => ComposeMarkersList(c, sortedMarkers.AsEnumerable().Reverse(), utcOffsetMinutes));
                     }
 
                     // Readings table
@@ -231,7 +230,7 @@ public class PdfExportService : IPdfExportService
         return sb.ToString();
     }
 
-    private static void ComposeMarkersList(IContainer container, List<TimelineMarkerDto> markers, int utcOffsetMinutes = 0)
+    private static void ComposeMarkersList(IContainer container, IEnumerable<TimelineMarkerDto> markers, int utcOffsetMinutes = 0)
     {
         container.Column(col =>
         {
