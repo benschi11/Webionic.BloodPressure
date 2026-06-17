@@ -114,7 +114,7 @@ app.MapRazorComponents<App>()
 app.MapAdditionalIdentityEndpoints();
 
 // PDF export endpoint
-app.MapGet("/api/report/pdf", async (int? days, int? tzOffset, HttpContext httpContext, IReportService reportService, IPdfExportService pdfExportService) =>
+app.MapGet("/api/report/pdf", async (int? days, int? tzOffset, HttpContext httpContext, IReportService reportService, IBloodPressureService bloodPressureService, IPdfExportService pdfExportService) =>
 {
     var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId is null)
@@ -125,7 +125,10 @@ app.MapGet("/api/report/pdf", async (int? days, int? tzOffset, HttpContext httpC
     var fromDate = DateTime.UtcNow.AddDays(-period);
     var stats = await reportService.GetStatsAsync(userId, fromDate);
     var readings = await reportService.GetReadingsForChartAsync(userId, period);
-    var pdf = pdfExportService.GenerateReport(stats, readings, period, utcOffsetMinutes);
+    var markers = (await bloodPressureService.GetTimelineMarkersAsync(userId, 100))
+        .Where(marker => marker.Timestamp >= fromDate)
+        .ToList();
+    var pdf = pdfExportService.GenerateReport(stats, readings, markers, period, utcOffsetMinutes);
 
     return Results.File(pdf, "application/pdf", $"Blutdruck-Report-{period}Tage.pdf");
 }).RequireAuthorization();
