@@ -18,10 +18,17 @@ public class BloodPressureService(ApplicationDbContext context) : IBloodPressure
         return readings.ToDtoList();
     }
 
-    public async Task<List<TimelineMarkerDto>> GetTimelineMarkersAsync(string userId, int count = 100)
+    public async Task<List<TimelineMarkerDto>> GetTimelineMarkersAsync(string userId, int count = 100, DateTime? fromDate = null)
     {
-        var markers = await context.TimelineMarkers
-            .Where(m => m.UserId == userId)
+        var query = context.TimelineMarkers
+            .Where(m => m.UserId == userId);
+
+        if (fromDate is not null)
+        {
+            query = query.Where(m => m.Timestamp >= fromDate.Value);
+        }
+
+        var markers = await query
             .OrderByDescending(m => m.Timestamp)
             .Take(count)
             .ToListAsync();

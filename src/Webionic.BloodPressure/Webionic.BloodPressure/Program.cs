@@ -125,9 +125,7 @@ app.MapGet("/api/report/pdf", async (int? days, int? tzOffset, HttpContext httpC
     var fromDate = DateTime.UtcNow.AddDays(-period);
     var stats = await reportService.GetStatsAsync(userId, fromDate);
     var readings = await reportService.GetReadingsForChartAsync(userId, period);
-    var markers = (await bloodPressureService.GetTimelineMarkersAsync(userId, 100))
-        .Where(marker => marker.Timestamp >= fromDate)
-        .ToList();
+    var markers = await bloodPressureService.GetTimelineMarkersAsync(userId, 100, fromDate);
     var pdf = pdfExportService.GenerateReport(stats, readings, markers, period, utcOffsetMinutes);
 
     return Results.File(pdf, "application/pdf", $"Blutdruck-Report-{period}Tage.pdf");
