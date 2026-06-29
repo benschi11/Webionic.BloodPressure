@@ -12,7 +12,6 @@
 @inject IReportService ReportService
 @inject IBloodPressureService BpService
 @inject AuthenticationStateProvider AuthStateProvider
-@inject NavigationManager Nav
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
@@ -155,10 +154,10 @@
                                 }
                             </div>
                         </div>
-                        <button class="reading-edit" @onclick="() => EditReading(entry.Id)" title="Bearbeiten"
+                        <a class="reading-edit" href="@($"/edit/{entry.Id}")" title="Bearbeiten"
                                 aria-label="Messung bearbeiten">
                             <i class="bi bi-pencil"></i>
-                        </button>
+                        </a>
                         <button class="reading-delete" @onclick="() => DeleteReading(entry.Id)" title="Löschen"
                                 aria-label="Messung löschen">
                             <i class="bi bi-trash3"></i>
@@ -233,11 +232,6 @@
         if (currentUserId is null) return;
         await BpService.DeleteReadingAsync(id, currentUserId);
         await LoadData();
-    }
-
-    private void EditReading(int id)
-    {
-        Nav.NavigateTo($"/edit/{id}");
     }
 
     private async Task SaveMarker()
